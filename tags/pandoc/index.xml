@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Pandoc on Marco&#39;s website</title>
+    <link>/tags/pandoc/</link>
+    <description>Recent content in Pandoc on Marco&#39;s website</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>fr</language><atom:link href="/tags/pandoc/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Lien entre l&#39;apprentissage statistique et le transport optimal</title>
+      <link>/post/1/01/01/lien-entre-lapprentissage-statistique-et-le-transport-optimal/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>/post/1/01/01/lien-entre-lapprentissage-statistique-et-le-transport-optimal/</guid>
+      <description>Dans ce blog, nous illustrons comment le transport optimal entre deux mesures discrètes peut être réduit à un problème d&amp;rsquo;apprentissage statistique qu&amp;rsquo;on peut résoudre à l&amp;rsquo;aide d&amp;rsquo;un algorithme d&amp;rsquo;optimization ici la descente de gradient.
+Transport optimal Soit
+$(\Omega_X, F_X, \mu)$ et $(\Omega_X, F_Y, \nu)$ deux espaces de probabilité $X:\Omega_X \rightarrow \mathbb{R}$ et $Y:\Omega_Y \rightarrow \mathbb{R}$ deux variables aléatoires La formulation de Kantorovich du problème de transport optimal est :
+$$ E_1 : \dfrac{\inf}{\gamma \in \Gamma(\mu, \nu)}{ \int_{X \times Y} c_T(x,y)d\gamma(x,y)} $$</description>
+    </item>
+    
+  </channel>
+</rss>
