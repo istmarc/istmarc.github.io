@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Transport optimal on Marco&#39;s website</title>
-    <link>/categories/transport-optimal/</link>
-    <description>Recent content in Transport optimal on Marco&#39;s website</description>
+    <title>optimal-transport on Marco&#39;s website</title>
+    <link>/tags/optimal-transport/</link>
+    <description>Recent content in optimal-transport on Marco&#39;s website</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>fr</language>
-    <lastBuildDate>Sun, 17 Sep 2023 00:00:00 +0000</lastBuildDate><atom:link href="/categories/transport-optimal/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sun, 17 Sep 2023 00:00:00 +0000</lastBuildDate><atom:link href="/tags/optimal-transport/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Lien entre l&#39;apprentissage statistique et le transport optimal</title>
       <link>/post/2023/09/17/lien-entre-lapprentissage-statistique-et-le-transport-optimal/</link>
