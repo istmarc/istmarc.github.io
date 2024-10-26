@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Minimum cost bipartite matching | Marco&#39;s website</title>
+    <link rel="stylesheet" href="/css/style.css" />
+    <link rel="stylesheet" href="/css/fonts.css" />
+    
+  </head>
+
+  <body>
+    <nav>
+    <ul class="menu">
+      
+      <li><a href="/">Acceuil</a></li>
+      
+      <li><a href="/about/">À propos</a></li>
+      
+      <li><a href="/categories/">Catégories</a></li>
+      
+      <li><a href="/tags/">Tags</a></li>
+      
+      <li><a href="/post/">Blog</a></li>
+      
+      <li><a href="/index.xml">S&#39;abonner</a></li>
+      
+    </ul>
+    <hr/>
+    </nav>
+
+<div class="article-meta">
+<h1><span class="title">Minimum cost bipartite matching</span></h1>
+<h2 class="author">Marc</h2>
+<h2 class="date">2024/10/26</h2>
+</div>
+
+<main>
+<h2 id="monge-formulation">Monge formulation</h2>
+<p>Let $(\Omega_{X}, F_{X}, \mu)$ and $(\Omega_{Y}, F_{Y}, \nu)$ be two probability spaces with $\mu$ and $\nu$ discrete measures.
+The Monge formulation of the optimal transport problem is</p>
+<font color="blue">
+$$\min \left\{ \sum_{X} c_{T}(x) \mu(x) : T_{\#}(\mu) = \nu \right\}$$
+</font>
+<p>where $T_{#}$ is the pushforward measure of $\mu$ by $T$.</p>
+<p>If $X: \Omega_{X} \rightarrow \mathbb{R}$ and $Y: \Omega_{Y} \rightarrow \mathbb{R}$ are two discrete random variables with $\Omega_{X} = \Omega_{Y} = [1, \ldots, N]$, this formulation is equivalent to</p>
+<font color="blue">
+$$ \begin{array}{c}\text{min}\\ \sigma \in \Pi_{N}\end{array}
+\left\{ \sum_{i=1}^{N} C_{i},\sigma(i) \right\}$$
+</font>
+<p>where $\Pi_{N}$ is the set of all the permutation matrices of ${1, \ldots, N} \text{x} {1, \ldots, N}$, $\sigma \in \Pi_{N}$ a permutation matrix and $\sigma(i)$ the ith row of $\sigma$.</p>
+<h3 id="importing-libraries">Importing libraries</h3>
+<pre><code class="language-python">import numpy as np
+import networkx as nx
+import math
+import matplotlib.pyplot as plt
+import matplotlib as mpl
+plt.style.use(&quot;science&quot;)
+</code></pre>
+<h3 id="bakeries-and-cafeterias">Bakeries and cafeterias</h3>
+<p>Suppose we have N bakeries and N cafeterias. A bakery can deliver to only one cafeteria. The cost of the ith bakery supplying the jth cafeteria is given by the following matrix</p>
+<pre><code class="language-python">N = 6
+C = np.array([[12., 10., 31., 27., 10., 30.],
+              [22.,  7., 25., 15., 11., 14.],
+              [19.,  7., 19., 10., 15., 15.],
+              [10.,  6., 21., 19., 14., 24.],
+              [15., 23., 14., 24., 31., 34.],
+              [35., 26., 16.,  9., 34., 15.]])
+</code></pre>
+<pre><code class="language-python">C.shape
+</code></pre>
+<pre><code>(6, 6)
+</code></pre>
+<p>We want to minimize the total cost of supplying all the N cafeterias.
+This is a problem of finding an optimal transport map i.e. an application T that maps a bakery to a cafeteria
+and minimizes the total cost.</p>
+<p>The number of possibilities is</p>
+<p>$$
+\begin{align}
+\left( \begin{array}{cc}6\1\end{array} \right) * \left( \begin{array}{cc}5\1\end{array} \right) * &hellip; * \left( \begin{array}{cc}2\1\end{array} \right) * 1 = 6!
+\end{align}
+$$</p>
+<pre><code class="language-python">math.factorial(6)
+</code></pre>
+<pre><code>720
+</code></pre>
+<p>One of these 720 possibilities is for the ith bakery to supply the ith cafeteria. The permutation matrix is $\sigma = I_{N}$ the identity matrix. The cost is the sum of the diagonal</p>
+<pre><code class="language-python">np.diag(C).sum()
+</code></pre>
+<pre><code>103.0
+</code></pre>
+<p>Instead of testing all the N! possible solutions which is impractical, we formulate the problem as follow</p>
+<p>$$\begin{array}{c}\text{min}\ \sigma \in \Pi_{N}\end{array} \left{ \sum_{i=1}^{N} C_{i},\sigma(i) \right}$$</p>
+<p>where $C$ is the cost and $\sigma$ is a permutation matrix of ${1, \ldots, N} \text{x} {1, \ldots, N}$</p>
+<h3 id="optimal-transport-as-minimum-cost-bipartite-matching">Optimal transport as minimum cost bipartite matching</h3>
+<p>Let&rsquo;s construct a graph where both the bakeries and the cafeterias are the nodes</p>
+<pre><code class="language-python">g = nx.Graph()
+</code></pre>
+<pre><code class="language-python">nodes_x = ['x' + str(_x) for _x in list(range(N))]
+nodes_y = ['y' + str(_y) for _y in list(range(N))]
+print(&quot;Nodes x :&quot;, *nodes_x)
+print(&quot;Nodes y :&quot;, *nodes_y)
+</code></pre>
+<pre><code>Nodes x : x0 x1 x2 x3 x4 x5
+Nodes y : y0 y1 y2 y3 y4 y5
+</code></pre>
+<p><strong>Adding the nodes to the graph</strong></p>
+<pre><code class="language-python">for node in nodes_x + nodes_y:
+    g.add_node(node)
+</code></pre>
+<p><strong>Adding the edges</strong></p>
+<pre><code class="language-python">for i in range(N):
+    for j in range(N):
+        g.add_edge(nodes_x[i], nodes_y[j], weight=C[i, j])
+</code></pre>
+<p><strong>Drawing the bipartite graph</strong></p>
+<pre><code class="language-python">def draw_graph(g, filename = &quot;&quot;, layout = &quot;bipartite&quot;):
+    fig = plt.figure(figsize=(5, 2))
+    if layout == &quot;bipartite&quot; :
+        pos = nx.bipartite_layout(g, nodes_x, align = 'horizontal')
+    else:
+        pos = nx.spring_layout(g, nodes_x)
+    nx.draw_networkx_nodes(g, pos, nodelist=nodes_x, node_color = 'silver', node_size = 400)
+    nx.draw_networkx_nodes(g, pos, nodelist=nodes_y, node_color = 'skyblue', node_size = 400)
+    nx.draw_networkx_labels(g, pos, font_color = 'black')
+    nx.draw_networkx_edges(g, pos)
+    edge_labels = nx.get_edge_attributes(g, 'weight')
+    nx.draw_networkx_edge_labels(g, pos, edge_labels)
+    plt.axis('off')
+    plt.tight_layout()
+    if filename != &quot;&quot;:
+        plt.savefig(filename)
+    plt.show()
+</code></pre>
+<pre><code class="language-python">draw_graph(g)
+</code></pre>
+<p><img src="output_26_0.png" alt="png"></p>
+<p>This is a bipartite graph, its vertices are divided into two disjoint sets $X = { x_{0}, x_{1}, &hellip;, x_{5} }$ and
+$Y = { y_{0}, y_{1}, &hellip;, y_{5}}$</p>
+<p>The optimal transport problem formulated above is the problem finding a matching in a bipartite graph for which the sum of the weight of the edges is minimum.</p>
+<p><strong>Solving the problem</strong></p>
+<p>Many polynomial time (in the number of vertices $N$) algorithms for solving this problem exists.
+The Hopcroft-karp algotihm is implemented in scipy and can be called from networkx to find the minimum bipartite matching of a graph.</p>
+<pre><code class="language-python">res = nx.bipartite.minimum_weight_full_matching(g)
+res
+</code></pre>
+<pre><code>{'x1': 'y5',
+ 'x2': 'y1',
+ 'x5': 'y3',
+ 'x4': 'y2',
+ 'x3': 'y0',
+ 'x0': 'y4',
+ 'y5': 'x1',
+ 'y1': 'x2',
+ 'y3': 'x5',
+ 'y2': 'x4',
+ 'y0': 'x3',
+ 'y4': 'x0'}
+</code></pre>
+<p>The minimum cost is the sum of the weights</p>
+<pre><code class="language-python">min_cost = 0.
+for src, dest in res.items():
+    min_cost += g.get_edge_data(src, dest)['weight']
+min_cost /= 2
+</code></pre>
+<p>The minimum cost is</p>
+<pre><code class="language-python">min_cost
+</code></pre>
+<pre><code>64.0
+</code></pre>
+<p><strong>Visual checking</strong></p>
+<pre><code class="language-python">fig, ax = plt.subplots(figsize = (4, 4))
+ax.matshow(C, cmap = mpl.colors.ListedColormap([&quot;white&quot;]))
+ax.set_title(&quot;Optimal transport plan&quot;)
+for i in range(N):
+    for j in range(N):
+        nodex = nodes_x[i]
+        nodey = nodes_y[j]
+        if (res[nodex] == nodey):
+            color = 'red'
+        else:
+            color = 'black'
+        ax.text(j, i, int(C[i, j]), horizontalalignment = 'center',
+                verticalalignment = 'center', weight = 'bold', color = color)
+</code></pre>
+<p><img src="output_36_0.png" alt="png"></p>
+<p>If we sum the values in white we have indeed the minimum cost</p>
+<pre><code class="language-python">10 + 7 + 14 + 9 + 10 + 14
+</code></pre>
+<pre><code>64
+</code></pre>
+<p>The solution is for the bakery 3 to supply the cafeteria 0, the bakery 2 to supply the cafeteria 1,
+the bakery 4 to supply the cafeteria 2 and so on&hellip;</p>
+<p>The optimal transport matrix is</p>
+<pre><code class="language-python">z = np.zeros((N, N))
+for i in range(N):
+    for j in range(N):
+        x = nodes_x[i]
+        y = nodes_y[j]
+        z[i,j] = (res[x] == y)
+z
+</code></pre>
+<pre><code>array([[0., 0., 0., 0., 1., 0.],
+       [0., 0., 0., 0., 0., 1.],
+       [0., 1., 0., 0., 0., 0.],
+       [1., 0., 0., 0., 0., 0.],
+       [0., 0., 1., 0., 0., 0.],
+       [0., 0., 0., 1., 0., 0.]])
+</code></pre>
+<p>z is the permutation matrix that minimizes the transportation cost</p>
+<p>$$z = \begin{array}{c}\text{argmin}\ \sigma \in \Pi_{N}\end{array} \sum_{i=1}^{N} C_{i},\sigma(i)$$</p>
+<p>The corresponding bipartite graph is</p>
+<pre><code class="language-python">sg = nx.Graph()
+nodes_x = ['x' + str(_x) for _x in list(range(N))]
+nodes_y = ['y' + str(_y) for _y in list(range(N))]
+for node in nodes_x + nodes_y:
+    sg.add_node(node)
+for i in range(N):
+    for j in range(N):
+        nodex = nodes_x[i]
+        nodey = nodes_y[j]
+        if (res[nodex] == nodey):
+            sg.add_edge(nodex, nodey, weight=C[i, j])
+</code></pre>
+<pre><code class="language-python">#draw_graph(sg, layout = &quot;planar&quot;)
+fig = plt.figure(figsize=(5, 2))
+# Layout
+pos = nx.spring_layout(sg, k = 4, seed = 10)
+# Nodes
+nx.draw_networkx_nodes(sg, pos, nodelist=nodes_x, node_color = 'silver', node_size = 400)
+nx.draw_networkx_nodes(sg, pos, nodelist=nodes_y, node_color = 'skyblue', node_size = 400)
+# Nodes labels
+nx.draw_networkx_labels(sg, pos, font_color = 'black')
+# Edges
+nx.draw_networkx_edges(sg, pos, style = &quot;dashed&quot;)
+# Edge weights labels
+edge_labels = nx.get_edge_attributes(sg, 'weight')
+nx.draw_networkx_edge_labels(sg, pos, edge_labels, font_color = 'black')
+plt.axis('off')
+plt.tight_layout()
+plt.show()
+</code></pre>
+<p><img src="output_45_0.png" alt="png"></p>
+<h2 id="references">References</h2>
+<ul>
+<li>Gabriel Peyré, <strong>Computational optimal transport</strong></li>
+</ul>
+
+</main>
+
+  <footer>
+  <script defer src="//yihui.org/js/math-code.js"></script>
+<script defer src="//mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+
+<script defer src="//yihui.org/js/center-img.js"></script>
+
+  
+  <hr/>
+  © <a href="https://istmarc.github.io">Marc</a> 2024 &ndash; 2024 | <a href="https://github.com/istmarc">Github</a>
+  
+  </footer>
+  </body>
+</html>
+
