@@ -13,9 +13,9 @@
       <pubDate>Sat, 26 Oct 2024 00:00:00 +0000</pubDate>
       
       <guid>/post/2024/10/26/minimum-cost-bipartite-matching/</guid>
-      <description>Monge formulation Let $(\Omega_{X}, F_{X}, \mu)$ and $(\Omega_{Y}, F_{Y}, \nu)$ be two probability spaces with $\mu$ and $\nu$ discrete measures. The Monge formulation of the optimal transport problem is
-$$\min \left\{ \sum_{X} c_{T}(x) \mu(x) : T_{\#}(\mu) = \nu \right\}$$ where $T_{#}$ is the pushforward measure of $\mu$ by $T$.
-If $X: \Omega_{X} \rightarrow \mathbb{R}$ and $Y: \Omega_{Y} \rightarrow \mathbb{R}$ are two discrete random variables with $\Omega_{X} = \Omega_{Y} = [1, \ldots, N]$, this formulation is equivalent to</description>
+      <description>Monge formulation Let \( (\Omega_{X}, F_{X}, \mu) \) and \( (\Omega_{Y}, F_{Y}, \nu) \) be two probability spaces with \(\mu\) and \(\nu\) discrete measures. The Monge formulation of the optimal transport problem is
+$$\min \left\{ \sum_{X} c_{T}(x) \mu(x) : T_{\#}(\mu) = \nu \right\}$$ where \( T_{\#} \) is the pushforward measure of \(\mu\) by \(T\).
+If \( X: \Omega_{X} \rightarrow \mathbb{R} \) and \( Y: \Omega_{Y} \rightarrow \mathbb{R} \) are two discrete random variables with \( \Omega_{X} = \Omega_{Y} = [1, \ldots, N] \), this formulation is equivalent to</description>
     </item>
     
     <item>
