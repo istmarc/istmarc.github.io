@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Gradient ascent for semi discrete optimal transport | Marco&#39;s website</title>
+    <link rel="stylesheet" href="/css/style.css" />
+    <link rel="stylesheet" href="/css/fonts.css" />
+    
+  </head>
+
+  <body>
+    <nav>
+    <ul class="menu">
+      
+      <li><a href="/">Acceuil</a></li>
+      
+      <li><a href="/about/">À propos</a></li>
+      
+      <li><a href="/categories/">Catégories</a></li>
+      
+      <li><a href="/tags/">Tags</a></li>
+      
+      <li><a href="/post/">Blog</a></li>
+      
+      <li><a href="/index.xml">S&#39;abonner</a></li>
+      
+    </ul>
+    <hr/>
+    </nav>
+
+<div class="article-meta">
+<h1><span class="title">Gradient ascent for semi discrete optimal transport</span></h1>
+<h2 class="author">Marc</h2>
+<h2 class="date">2024/10/26</h2>
+</div>
+
+<main>
+<p>In this post, we explore how the gradient ascent algorithm can be used to solve the semi discrete optimal transport problem. We will show a step by step implementation of this technique and showcase its effectiveness in solving the problem.</p>
+<h3 id="importing-libraries">Importing libraries</h3>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#000;font-weight:bold">import</span> <span style="color:#555">numpy</span> <span style="color:#000;font-weight:bold">as</span> <span style="color:#555">np</span>
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">from</span> <span style="color:#555">scipy</span> <span style="color:#000;font-weight:bold">import</span> stats
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">import</span> <span style="color:#555">matplotlib.pyplot</span> <span style="color:#000;font-weight:bold">as</span> <span style="color:#555">plt</span>
+</span></span><span style="display:flex;"><span>plt<span style="color:#000;font-weight:bold">.</span>rcParams[<span style="color:#d14">&#39;text.usetex&#39;</span>] <span style="color:#000;font-weight:bold">=</span> <span style="color:#000;font-weight:bold">True</span>
+</span></span><span style="display:flex;"><span>plt<span style="color:#000;font-weight:bold">.</span>style<span style="color:#000;font-weight:bold">.</span>use(<span style="color:#d14">&#34;science&#34;</span>)
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">import</span> <span style="color:#555">cvxpy</span> <span style="color:#000;font-weight:bold">as</span> <span style="color:#555">cp</span>
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">import</span> <span style="color:#555">math</span>
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">import</span> <span style="color:#555">matplotlib</span> <span style="color:#000;font-weight:bold">as</span> <span style="color:#555">mpl</span>
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">from</span> <span style="color:#555">random</span> <span style="color:#000;font-weight:bold">import</span> shuffle
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">import</span> <span style="color:#555">pandas</span> <span style="color:#000;font-weight:bold">as</span> <span style="color:#555">pd</span>
+</span></span></code></pre></div><h3 id="semi-discrete-optimal-transport">Semi discrete optimal transport</h3>
+<font color="blue">
+$$
+\begin{align}
+\text{min} \big\{ \int_X \sum_j c_{T}(x, y_j) d\gamma_j(x) : \int_X d\gamma_j(x) = \nu_j, \sum_j d\gamma_j(x) = d\mu(x) \big\}
+\end{align}
+$$
+</font>
+<p>where</p>
+<ul>
+<li>\(\mu(x) \sim X\) is a continuous distribution</li>
+<li>\(\nu \sim Y\) is a discrete distribution</li>
+<li>\(c_T(x, y_j) = \frac{1}{2}(x - y_j)^2\) is the cost function</li>
+</ul>
+<h3 id="generate-a-problem">Generate a problem</h3>
+<p><strong>Continuous distribution \(\mu(x) \sim X = N(0, 1)\) and a discrete distribution \(\nu \sim Y\)</strong></p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>data <span style="color:#000;font-weight:bold">=</span> pd<span style="color:#000;font-weight:bold">.</span>read_csv(<span style="color:#d14">&#34;../datasets/gaussians_double.csv&#34;</span>)
+</span></span><span style="display:flex;"><span>x <span style="color:#000;font-weight:bold">=</span> data[<span style="color:#d14">&#34;x&#34;</span>]
+</span></span><span style="display:flex;"><span>y <span style="color:#000;font-weight:bold">=</span> data[<span style="color:#d14">&#34;y&#34;</span>]
+</span></span><span style="display:flex;"><span>N <span style="color:#000;font-weight:bold">=</span> x<span style="color:#000;font-weight:bold">.</span>size
+</span></span><span style="display:flex;"><span>M <span style="color:#000;font-weight:bold">=</span> y<span style="color:#000;font-weight:bold">.</span>size
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>fig, ax <span style="color:#000;font-weight:bold">=</span> plt<span style="color:#000;font-weight:bold">.</span>subplots(figsize<span style="color:#000;font-weight:bold">=</span>(<span style="color:#099">5</span>, <span style="color:#099">2</span>)) 
+</span></span><span style="display:flex;"><span>plt<span style="color:#000;font-weight:bold">.</span>bar(<span style="color:#0086b3">range</span>(N), x, color <span style="color:#000;font-weight:bold">=</span> <span style="color:#d14">&#34;darkblue&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#000;font-weight:bold">.</span>bar(<span style="color:#0086b3">range</span>(M), y, color <span style="color:#000;font-weight:bold">=</span> <span style="color:#d14">&#34;maroon&#34;</span>, alpha <span style="color:#000;font-weight:bold">=</span> <span style="color:#099">0.5</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#000;font-weight:bold">.</span>show()
+</span></span></code></pre></div><p><img src="output_9_0.png" alt="png"></p>
+<h3 id="distance-matrix">Distance matrix</h3>
+<p>$$C = d(x_i, y_j) = \frac{1}{2}(x_i - y_j)^2$$</p>
+<p>$$i = {1, 2, \ldots, M} \ \text{and} \ j = {1, 2, \ldots, N}$$</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>C <span style="color:#000;font-weight:bold">=</span> np<span style="color:#000;font-weight:bold">.</span>zeros((M, N))
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">for</span> i <span style="color:#000;font-weight:bold">in</span> <span style="color:#0086b3">range</span>(M):
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">for</span> j <span style="color:#000;font-weight:bold">in</span> <span style="color:#0086b3">range</span>(N):
+</span></span><span style="display:flex;"><span>        C[i, j] <span style="color:#000;font-weight:bold">=</span> <span style="color:#099">.5</span> <span style="color:#000;font-weight:bold">*</span> (x[i] <span style="color:#000;font-weight:bold">-</span> y[j])<span style="color:#000;font-weight:bold">**</span><span style="color:#099">2</span>
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>fig, ax <span style="color:#000;font-weight:bold">=</span> plt<span style="color:#000;font-weight:bold">.</span>subplots(figsize<span style="color:#000;font-weight:bold">=</span>(<span style="color:#099">3</span>, <span style="color:#099">3</span>))
+</span></span><span style="display:flex;"><span>ax<span style="color:#000;font-weight:bold">.</span>matshow(C)
+</span></span><span style="display:flex;"><span>plt<span style="color:#000;font-weight:bold">.</span>show()
+</span></span></code></pre></div><p><img src="output_13_0.png" alt="png"></p>
+<h3 id="gradient-ascent-algorithm">Gradient ascent algorithm</h3>
+<p><strong>Dual formulation</strong></p>
+<font color="blue">
+$$\sup_{\psi, \phi} \big\{ \sum_j\psi_j\nu_j + \int_X \phi(x) d\mu(x) : \psi_j + \phi(x) \leq c(x, y_j) \big\}$$
+</font>
+<p>which is equivalent to</p>
+<font color="blue">
+$$\sup_{\psi} \big\{ \sum_j\psi_j\nu_j + \int_X \inf_{j}[c(x, y_j) - \psi_j] d\mu(x) \big\}$$
+</font>
+<p>This loss function is <strong>non-smooth</strong> but it can be optimized with a projective gradient ascent algorithm</p>
+<p><strong>Objective function</strong></p>
+<font color="blue">
+$$J(\psi) = \sum_j \psi_j \nu_j + \int_X \inf_j [c(x, y_j) - \psi_j]d\mu(x)$$
+</font>
+<p>with \( \psi = (\psi_1, \psi_2, \ldots, \psi_N) \in R^N \)</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#998;font-style:italic"># Objective function</span>
+</span></span><span style="display:flex;"><span><span style="color:#998;font-style:italic"># Return the value of the objective function, arginf(c(x,y_j) - psi_j) and phi</span>
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">obj</span>(psi, nu, M, N, C):
+</span></span><span style="display:flex;"><span>    r <span style="color:#000;font-weight:bold">=</span> <span style="color:#099">0.</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">for</span> j <span style="color:#000;font-weight:bold">in</span> <span style="color:#0086b3">range</span>(N):
+</span></span><span style="display:flex;"><span>        r <span style="color:#000;font-weight:bold">+=</span> psi[j] <span style="color:#000;font-weight:bold">*</span> nu[j]
+</span></span><span style="display:flex;"><span>    arg_inf <span style="color:#000;font-weight:bold">=</span> np<span style="color:#000;font-weight:bold">.</span>zeros(N, dtype <span style="color:#000;font-weight:bold">=</span> np<span style="color:#000;font-weight:bold">.</span>int64)
+</span></span><span style="display:flex;"><span>    phi <span style="color:#000;font-weight:bold">=</span> np<span style="color:#000;font-weight:bold">.</span>zeros(M)
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">for</span> i <span style="color:#000;font-weight:bold">in</span> <span style="color:#0086b3">range</span>(M):
+</span></span><span style="display:flex;"><span>        j_star <span style="color:#000;font-weight:bold">=</span> np<span style="color:#000;font-weight:bold">.</span>random<span style="color:#000;font-weight:bold">.</span>randint(N)
+</span></span><span style="display:flex;"><span>        min_value <span style="color:#000;font-weight:bold">=</span> <span style="color:#0086b3">max</span>(<span style="color:#099">0.</span>, C[i, j_star] <span style="color:#000;font-weight:bold">-</span> psi[j_star])
+</span></span><span style="display:flex;"><span>        nn <span style="color:#000;font-weight:bold">=</span> <span style="color:#0086b3">list</span>(<span style="color:#0086b3">range</span>(N))
+</span></span><span style="display:flex;"><span>        shuffle(nn)
+</span></span><span style="display:flex;"><span>        <span style="color:#000;font-weight:bold">for</span> j <span style="color:#000;font-weight:bold">in</span> nn:
+</span></span><span style="display:flex;"><span>            new_value <span style="color:#000;font-weight:bold">=</span> C[i,j] <span style="color:#000;font-weight:bold">-</span> psi[j]
+</span></span><span style="display:flex;"><span>            <span style="color:#000;font-weight:bold">if</span> (new_value <span style="color:#000;font-weight:bold">&gt;</span> <span style="color:#099">0.</span> <span style="color:#000;font-weight:bold">and</span> new_value <span style="color:#000;font-weight:bold">&lt;</span> min_value):
+</span></span><span style="display:flex;"><span>                min_value <span style="color:#000;font-weight:bold">=</span> C[i, j] <span style="color:#000;font-weight:bold">-</span> psi[j]
+</span></span><span style="display:flex;"><span>                j_star <span style="color:#000;font-weight:bold">=</span> j
+</span></span><span style="display:flex;"><span>        phi[i] <span style="color:#000;font-weight:bold">=</span> min_value
+</span></span><span style="display:flex;"><span>        arg_inf[i] <span style="color:#000;font-weight:bold">=</span> j_star
+</span></span><span style="display:flex;"><span>        r <span style="color:#000;font-weight:bold">+=</span> min_value <span style="color:#000;font-weight:bold">*</span> x[j_star]
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">return</span> r, phi, arg_inf
+</span></span></code></pre></div><p><strong>Gradient of the objective function</strong></p>
+<p>$$\nabla J (\psi) = \left( \frac{\partial J}{\delta \psi_1}, \frac{\partial J}{\partial \psi_2},
+\ldots, \frac{\partial J}{\partial \psi_N} \right) = \left( \ldots, \frac{\partial J}{\partial \psi_k}, \ldots \right)$$</p>
+<p>with $k = 1, 2, \ldots, N$</p>
+<p>$$
+\begin{align}
+\frac{\partial J}{\partial \psi_k} &amp;= \frac{\partial J}{\partial \psi_k} \sum_j \psi_j \nu_j + \int_X \inf_j [c(x, y_j) - \psi_j]d\mu(x)
+&amp;= \frac{\partial J}{\partial \psi_k} \sum_j \psi_j \nu_j + \sum_i \inf_j [c(x_i, y_j) - \psi_j]x_i\
+&amp;= \nu_k + \frac{\partial J}{\partial \psi_k} \sum_i [c(x_i, y_{j_i^{<em>}}) - \psi_{j_i^{</em>}}]x_i\
+\end{align}
+$$</p>
+<p>where $j_i^{*} = \arg \inf c(x_i, y_j) - \psi_j$</p>
+<p>$$
+\begin{align}
+\frac{\partial J}{\partial \psi_k} &amp;= \nu_k + \sum_i \frac{\partial J}{\partial \psi_k} [c(x_i, y_{j_i^{*}}) - \psi_{j_i^{*}}]x_i\
+&amp;= \nu_k - \sum_i \delta_{k j_i^{*}} x_i\
+\end{align}
+$$</p>
+<p>where \( \delta_{k j_i^{<em>}} = [k = j_i^{</em>}] \) is the Kronecker delta function</p>
+<p>Thus</p>
+<p>$$\nabla J (\psi) = \left( \ldots \nu_k - \sum_i \delta_{k j_i^{*}} x_i \ldots \right)$$</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#998;font-style:italic"># Gradient of J</span>
+</span></span><span style="display:flex;"><span><span style="color:#998;font-style:italic"># Here it doesn&#39;t depend on the parameter psi</span>
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">grad_obj</span>(psi, phi, arg_inf, nu, M, N):
+</span></span><span style="display:flex;"><span>    grad <span style="color:#000;font-weight:bold">=</span> np<span style="color:#000;font-weight:bold">.</span>zeros(N)
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">for</span> k <span style="color:#000;font-weight:bold">in</span> <span style="color:#0086b3">range</span>(N):
+</span></span><span style="display:flex;"><span>        grad[k] <span style="color:#000;font-weight:bold">=</span> nu[k]
+</span></span><span style="display:flex;"><span>        <span style="color:#000;font-weight:bold">for</span> i <span style="color:#000;font-weight:bold">in</span> <span style="color:#0086b3">range</span>(M):
+</span></span><span style="display:flex;"><span>            grad[k] <span style="color:#000;font-weight:bold">-=</span> x[arg_inf[k]]
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">return</span> grad
+</span></span></code></pre></div><p><strong>Projective Gradient ascent algorithm</strong></p>
+<ol>
+<li>Choose \(\psi \in \mathbb{R}^{N}\)</li>
+<li>\(\psi_{n+1} = \text{Proj}_{D} \left( \psi_n - \lambda \nabla J(\psi_n) \right)\)</li>
+<li>\(\phi_{n+1} = \text{Proj}_{D} \left( \inf_j c(x, y_j) - \psi_n(j) \right)\)</li>
+<li>Repeat steps 2 and 3 until convergence</li>
+</ol>
+<p>where</p>
+<ul>
+<li>\(\lambda\) is the learning rate</li>
+<li>\(\text{Proj}\) is the projection onto \(D = \left[ 0, C(x, y_j) \right] ^ N\)</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">project</span>(psi, phi, M, N, C):
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">for</span> i <span style="color:#000;font-weight:bold">in</span> <span style="color:#0086b3">range</span>(M):
+</span></span><span style="display:flex;"><span>        <span style="color:#000;font-weight:bold">for</span> j <span style="color:#000;font-weight:bold">in</span> <span style="color:#0086b3">range</span>(N):
+</span></span><span style="display:flex;"><span>            <span style="color:#000;font-weight:bold">if</span> psi[j] <span style="color:#000;font-weight:bold">&gt;</span> <span style="color:#099">0.</span>:
+</span></span><span style="display:flex;"><span>                <span style="color:#000;font-weight:bold">if</span> C[i,j] <span style="color:#000;font-weight:bold">-</span> phi[j] <span style="color:#000;font-weight:bold">&lt;</span> psi[j]:
+</span></span><span style="display:flex;"><span>                    psi[j] <span style="color:#000;font-weight:bold">=</span> C[i,j] <span style="color:#000;font-weight:bold">-</span> phi[j]
+</span></span><span style="display:flex;"><span>    psi <span style="color:#000;font-weight:bold">=</span> np<span style="color:#000;font-weight:bold">.</span>maximum(np<span style="color:#000;font-weight:bold">.</span>zeros(N), psi)
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">return</span> psi
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#998;font-style:italic"># Projective gradient ascent</span>
+</span></span><span style="display:flex;"><span><span style="color:#998;font-style:italic"># Returns psi, phi and the loss</span>
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">proj_gradient_ascent</span>(x, nu, M, N, lr <span style="color:#000;font-weight:bold">=</span> <span style="color:#099">1e-3</span>, epochs <span style="color:#000;font-weight:bold">=</span> <span style="color:#099">100</span>):
+</span></span><span style="display:flex;"><span>    psi_0 <span style="color:#000;font-weight:bold">=</span> np<span style="color:#000;font-weight:bold">.</span>random<span style="color:#000;font-weight:bold">.</span>randn(N)
+</span></span><span style="display:flex;"><span>    psi_0 <span style="color:#000;font-weight:bold">=</span> np<span style="color:#000;font-weight:bold">.</span>maximum(np<span style="color:#000;font-weight:bold">.</span>zeros(N), psi_0)
+</span></span><span style="display:flex;"><span>    loss_0, phi_0, arg_inf <span style="color:#000;font-weight:bold">=</span> obj(psi_0, nu, M, N, C)
+</span></span><span style="display:flex;"><span>    hist <span style="color:#000;font-weight:bold">=</span> []
+</span></span><span style="display:flex;"><span>    best <span style="color:#000;font-weight:bold">=</span> {<span style="color:#d14">&#34;psi&#34;</span>: psi_0, <span style="color:#d14">&#34;phi&#34;</span>: phi_0, <span style="color:#d14">&#34;loss&#34;</span>: <span style="color:#099">0.</span>}
+</span></span><span style="display:flex;"><span>    best_epoch <span style="color:#000;font-weight:bold">=</span> <span style="color:#099">0</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">for</span> epoch <span style="color:#000;font-weight:bold">in</span> <span style="color:#0086b3">range</span>(epochs):
+</span></span><span style="display:flex;"><span>        <span style="color:#998;font-style:italic"># project phi back onto [0, C]^N</span>
+</span></span><span style="display:flex;"><span>        phi_0 <span style="color:#000;font-weight:bold">=</span> project(phi_0<span style="color:#000;font-weight:bold">.</span>copy(), psi_0, M, N, C)
+</span></span><span style="display:flex;"><span>        <span style="color:#998;font-style:italic"># Compute the gradient</span>
+</span></span><span style="display:flex;"><span>        grad <span style="color:#000;font-weight:bold">=</span> grad_obj(psi_0, phi_0, arg_inf, nu, M, N)
+</span></span><span style="display:flex;"><span>        <span style="color:#998;font-style:italic"># Update psi</span>
+</span></span><span style="display:flex;"><span>        psi_1 <span style="color:#000;font-weight:bold">=</span> psi_0 <span style="color:#000;font-weight:bold">-</span> lr <span style="color:#000;font-weight:bold">*</span> grad
+</span></span><span style="display:flex;"><span>        <span style="color:#998;font-style:italic"># project psi back onto [0, C]^N</span>
+</span></span><span style="display:flex;"><span>        psi_1 <span style="color:#000;font-weight:bold">=</span> project(psi_1, phi_0, M, N, C)
+</span></span><span style="display:flex;"><span>        <span style="color:#998;font-style:italic"># Compute the loss and phi</span>
+</span></span><span style="display:flex;"><span>        loss_1, phi_1, arg_inf <span style="color:#000;font-weight:bold">=</span> obj(psi_1, nu, M, N, C)
+</span></span><span style="display:flex;"><span>        <span style="color:#998;font-style:italic"># Save psi and phi</span>
+</span></span><span style="display:flex;"><span>        psi_0 <span style="color:#000;font-weight:bold">=</span> psi_1
+</span></span><span style="display:flex;"><span>        phi_0 <span style="color:#000;font-weight:bold">=</span> phi_1
+</span></span><span style="display:flex;"><span>        loss_0 <span style="color:#000;font-weight:bold">=</span> loss_1
+</span></span><span style="display:flex;"><span>        <span style="color:#998;font-style:italic"># Save the loss history</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#000;font-weight:bold">if</span> epoch <span style="color:#000;font-weight:bold">&gt;</span> <span style="color:#099">0</span>:
+</span></span><span style="display:flex;"><span>            hist<span style="color:#000;font-weight:bold">.</span>append(loss_1)
+</span></span><span style="display:flex;"><span>            <span style="color:#000;font-weight:bold">if</span> loss_1 <span style="color:#000;font-weight:bold">&gt;</span> best[<span style="color:#d14">&#34;loss&#34;</span>]:
+</span></span><span style="display:flex;"><span>                best[<span style="color:#d14">&#34;phi&#34;</span>] <span style="color:#000;font-weight:bold">=</span> phi_1
+</span></span><span style="display:flex;"><span>                best[<span style="color:#d14">&#34;psi&#34;</span>] <span style="color:#000;font-weight:bold">=</span> psi_1
+</span></span><span style="display:flex;"><span>                best[<span style="color:#d14">&#34;loss&#34;</span>] <span style="color:#000;font-weight:bold">=</span> loss_1
+</span></span><span style="display:flex;"><span>                best[<span style="color:#d14">&#34;epoch&#34;</span>] <span style="color:#000;font-weight:bold">=</span> epoch
+</span></span><span style="display:flex;"><span>                best_epoch <span style="color:#000;font-weight:bold">=</span> epoch
+</span></span><span style="display:flex;"><span>    <span style="color:#0086b3">print</span>(<span style="color:#d14">&#34;Max loss </span><span style="color:#d14">{}</span><span style="color:#d14"> at epoch </span><span style="color:#d14">{}</span><span style="color:#d14">&#34;</span><span style="color:#000;font-weight:bold">.</span>format(best[<span style="color:#d14">&#34;loss&#34;</span>], best[<span style="color:#d14">&#34;epoch&#34;</span>]))
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">return</span> best, hist
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>params, hist <span style="color:#000;font-weight:bold">=</span> proj_gradient_ascent(x, y, M, N)
+</span></span></code></pre></div><pre><code>Max loss 1.8869948125000022e-06 at epoch 92
+</code></pre>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>psi, phi, loss, epoch_max <span style="color:#000;font-weight:bold">=</span> <span style="color:#0086b3">tuple</span>(params<span style="color:#000;font-weight:bold">.</span>values())
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>fig <span style="color:#000;font-weight:bold">=</span> plt<span style="color:#000;font-weight:bold">.</span>figure(figsize<span style="color:#000;font-weight:bold">=</span>(<span style="color:#099">6</span>, <span style="color:#099">3</span>))
+</span></span><span style="display:flex;"><span>plt<span style="color:#000;font-weight:bold">.</span>plot(hist, label <span style="color:#000;font-weight:bold">=</span> <span style="color:#d14">&#34;loss J($\psi$)&#34;</span>, color<span style="color:#000;font-weight:bold">=</span><span style="color:#d14">&#34;darkblue&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#000;font-weight:bold">.</span>axhline(loss, color <span style="color:#000;font-weight:bold">=</span> <span style="color:#d14">&#34;red&#34;</span>, label <span style="color:#000;font-weight:bold">=</span> <span style="color:#d14">&#34;max J($\psi$)&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#000;font-weight:bold">.</span>legend()
+</span></span><span style="display:flex;"><span>plt<span style="color:#000;font-weight:bold">.</span>show()
+</span></span></code></pre></div><p><img src="output_31_0.png" alt="png"></p>
+<h3 id="primal-from-dual">Primal from dual</h3>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">init_gamma</span>(x, y, M, N, C, phi, psi, eps):
+</span></span><span style="display:flex;"><span>    Ax <span style="color:#000;font-weight:bold">=</span> np<span style="color:#000;font-weight:bold">.</span>kron(np<span style="color:#000;font-weight:bold">.</span>identity(M), np<span style="color:#000;font-weight:bold">.</span>ones(N))
+</span></span><span style="display:flex;"><span>    Ay <span style="color:#000;font-weight:bold">=</span> np<span style="color:#000;font-weight:bold">.</span>kron(np<span style="color:#000;font-weight:bold">.</span>ones(M), np<span style="color:#000;font-weight:bold">.</span>identity(N))
+</span></span><span style="display:flex;"><span>    A <span style="color:#000;font-weight:bold">=</span> np<span style="color:#000;font-weight:bold">.</span>concatenate((Ax, Ay), <span style="color:#099">0</span>)
+</span></span><span style="display:flex;"><span>    c <span style="color:#000;font-weight:bold">=</span> C<span style="color:#000;font-weight:bold">.</span>flatten()
+</span></span><span style="display:flex;"><span>    u <span style="color:#000;font-weight:bold">=</span> np<span style="color:#000;font-weight:bold">.</span>concatenate((phi, psi), <span style="color:#099">0</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#998;font-style:italic"># Slack variables</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#998;font-style:italic"># xi = 0 when si &gt; 0 </span>
+</span></span><span style="display:flex;"><span>    s <span style="color:#000;font-weight:bold">=</span> c <span style="color:#000;font-weight:bold">-</span> A<span style="color:#000;font-weight:bold">.</span>T <span style="color:#000;font-weight:bold">@</span> u
+</span></span><span style="display:flex;"><span>    <span style="color:#998;font-style:italic"># Initialize gamma</span>
+</span></span><span style="display:flex;"><span>    gamma <span style="color:#000;font-weight:bold">=</span> np<span style="color:#000;font-weight:bold">.</span>ones(M <span style="color:#000;font-weight:bold">*</span> N)
+</span></span><span style="display:flex;"><span>    <span style="color:#998;font-style:italic"># Number of nonzero variables</span>
+</span></span><span style="display:flex;"><span>    k <span style="color:#000;font-weight:bold">=</span> M <span style="color:#000;font-weight:bold">*</span> N
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">for</span> i <span style="color:#000;font-weight:bold">in</span> <span style="color:#0086b3">range</span>(s<span style="color:#000;font-weight:bold">.</span>size):
+</span></span><span style="display:flex;"><span>        <span style="color:#000;font-weight:bold">if</span> <span style="color:#0086b3">abs</span>(s[i]) <span style="color:#000;font-weight:bold">&gt;</span> eps:
+</span></span><span style="display:flex;"><span>            gamma[i] <span style="color:#000;font-weight:bold">=</span> <span style="color:#099">0.</span>
+</span></span><span style="display:flex;"><span>            k <span style="color:#000;font-weight:bold">-=</span> <span style="color:#099">1</span>
+</span></span><span style="display:flex;"><span>    Gamma <span style="color:#000;font-weight:bold">=</span> gamma<span style="color:#000;font-weight:bold">.</span>reshape((M, N))
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">return</span> Gamma, k
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>eps <span style="color:#000;font-weight:bold">=</span> <span style="color:#099">1e-3</span>
+</span></span><span style="display:flex;"><span>Gamma_0, k <span style="color:#000;font-weight:bold">=</span> init_gamma(x, y, M, N, C, phi, psi, eps)
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>fig <span style="color:#000;font-weight:bold">=</span> plt<span style="color:#000;font-weight:bold">.</span>figure(figsize<span style="color:#000;font-weight:bold">=</span>(<span style="color:#099">3.5</span>, <span style="color:#099">3.5</span>))
+</span></span><span style="display:flex;"><span>plt<span style="color:#000;font-weight:bold">.</span>imshow(Gamma_0, cmap <span style="color:#000;font-weight:bold">=</span> mpl<span style="color:#000;font-weight:bold">.</span>colormaps[<span style="color:#d14">&#34;inferno&#34;</span>])
+</span></span><span style="display:flex;"><span>plt<span style="color:#000;font-weight:bold">.</span>show()
+</span></span></code></pre></div><p><img src="output_35_0.png" alt="png"></p>
+<p><strong>Constraints for \(A_x \gamma = x\)</strong></p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">linear_constraints_x</span>(Gamma, M, N, k, eps):
+</span></span><span style="display:flex;"><span>    <span style="color:#998;font-style:italic"># Indices of non zeros</span>
+</span></span><span style="display:flex;"><span>    Indices <span style="color:#000;font-weight:bold">=</span> []
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">for</span> i <span style="color:#000;font-weight:bold">in</span> <span style="color:#0086b3">range</span>(M):
+</span></span><span style="display:flex;"><span>        <span style="color:#000;font-weight:bold">for</span> j <span style="color:#000;font-weight:bold">in</span> <span style="color:#0086b3">range</span>(N):
+</span></span><span style="display:flex;"><span>            <span style="color:#000;font-weight:bold">if</span> <span style="color:#0086b3">abs</span>(Gamma[i,j]) <span style="color:#000;font-weight:bold">&gt;</span> eps:
+</span></span><span style="display:flex;"><span>                Indices<span style="color:#000;font-weight:bold">.</span>append([i, j])
+</span></span><span style="display:flex;"><span>    <span style="color:#998;font-style:italic"># Number of nonzeros for the ith row</span>
+</span></span><span style="display:flex;"><span>    Rows <span style="color:#000;font-weight:bold">=</span> <span style="color:#0086b3">dict</span>()
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">for</span> i <span style="color:#000;font-weight:bold">in</span> <span style="color:#0086b3">range</span>(<span style="color:#0086b3">len</span>(Indices)):
+</span></span><span style="display:flex;"><span>        j <span style="color:#000;font-weight:bold">=</span> Indices[i][<span style="color:#099">0</span>]
+</span></span><span style="display:flex;"><span>        <span style="color:#000;font-weight:bold">if</span> <span style="color:#000;font-weight:bold">not</span> j <span style="color:#000;font-weight:bold">in</span> Rows:
+</span></span><span style="display:flex;"><span>            Rows[j] <span style="color:#000;font-weight:bold">=</span> <span style="color:#099">1</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#000;font-weight:bold">else</span>:
+</span></span><span style="display:flex;"><span>            Rows[j] <span style="color:#000;font-weight:bold">+=</span> <span style="color:#099">1</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#998;font-style:italic"># Fill A and b</span>
+</span></span><span style="display:flex;"><span>    A <span style="color:#000;font-weight:bold">=</span> []
+</span></span><span style="display:flex;"><span>    b <span style="color:#000;font-weight:bold">=</span> []
+</span></span><span style="display:flex;"><span>    skip <span style="color:#000;font-weight:bold">=</span> <span style="color:#099">0</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">for</span> (i, n) <span style="color:#000;font-weight:bold">in</span> Rows<span style="color:#000;font-weight:bold">.</span>items():
+</span></span><span style="display:flex;"><span>        vec <span style="color:#000;font-weight:bold">=</span> np<span style="color:#000;font-weight:bold">.</span>concatenate((np<span style="color:#000;font-weight:bold">.</span>zeros(skip), np<span style="color:#000;font-weight:bold">.</span>ones(n), np<span style="color:#000;font-weight:bold">.</span>zeros(k <span style="color:#000;font-weight:bold">-</span> n <span style="color:#000;font-weight:bold">-</span> skip)), <span style="color:#099">0</span>)
+</span></span><span style="display:flex;"><span>        A<span style="color:#000;font-weight:bold">.</span>append(vec)
+</span></span><span style="display:flex;"><span>        b<span style="color:#000;font-weight:bold">.</span>append(x[i])
+</span></span><span style="display:flex;"><span>        skip <span style="color:#000;font-weight:bold">+=</span> n
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">return</span> A, b, Indices
+</span></span></code></pre></div><p><strong>Constraints for \(A_y \gamma = y\)</strong></p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">linear_constraints_y</span>(Gamma, M, N, k, eps):
+</span></span><span style="display:flex;"><span>    <span style="color:#998;font-style:italic"># Indices of non zeros (i, j)</span>
+</span></span><span style="display:flex;"><span>    I <span style="color:#000;font-weight:bold">=</span> []
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">for</span> i <span style="color:#000;font-weight:bold">in</span> <span style="color:#0086b3">range</span>(M):
+</span></span><span style="display:flex;"><span>        <span style="color:#000;font-weight:bold">for</span> j <span style="color:#000;font-weight:bold">in</span> <span style="color:#0086b3">range</span>(N):
+</span></span><span style="display:flex;"><span>            <span style="color:#000;font-weight:bold">if</span> <span style="color:#0086b3">abs</span>(Gamma[i,j]) <span style="color:#000;font-weight:bold">&gt;</span> eps:
+</span></span><span style="display:flex;"><span>                I<span style="color:#000;font-weight:bold">.</span>append([i, j])
+</span></span><span style="display:flex;"><span>    <span style="color:#998;font-style:italic"># Indices of non zeros (j, i)</span>
+</span></span><span style="display:flex;"><span>    Indices <span style="color:#000;font-weight:bold">=</span> []
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">for</span> j <span style="color:#000;font-weight:bold">in</span> <span style="color:#0086b3">range</span>(N):
+</span></span><span style="display:flex;"><span>        <span style="color:#000;font-weight:bold">for</span> i <span style="color:#000;font-weight:bold">in</span> <span style="color:#0086b3">range</span>(M):
+</span></span><span style="display:flex;"><span>            <span style="color:#000;font-weight:bold">if</span> <span style="color:#0086b3">abs</span>(Gamma[i,j]) <span style="color:#000;font-weight:bold">&gt;</span> eps:
+</span></span><span style="display:flex;"><span>                Indices<span style="color:#000;font-weight:bold">.</span>append([j, i])
+</span></span><span style="display:flex;"><span>    <span style="color:#998;font-style:italic"># Number of indices to skip</span>
+</span></span><span style="display:flex;"><span>    Skip <span style="color:#000;font-weight:bold">=</span> <span style="color:#0086b3">dict</span>()
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">for</span> i <span style="color:#000;font-weight:bold">in</span> <span style="color:#0086b3">range</span>(<span style="color:#0086b3">len</span>(Indices)):
+</span></span><span style="display:flex;"><span>        j <span style="color:#000;font-weight:bold">=</span> Indices[i][<span style="color:#099">0</span>]
+</span></span><span style="display:flex;"><span>        <span style="color:#000;font-weight:bold">if</span> <span style="color:#000;font-weight:bold">not</span> j <span style="color:#000;font-weight:bold">in</span> Skip:
+</span></span><span style="display:flex;"><span>            Skip[j] <span style="color:#000;font-weight:bold">=</span> <span style="color:#099">1</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#000;font-weight:bold">else</span>:
+</span></span><span style="display:flex;"><span>            Skip[j] <span style="color:#000;font-weight:bold">+=</span> <span style="color:#099">1</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#998;font-style:italic"># Fill A and b</span>
+</span></span><span style="display:flex;"><span>    A <span style="color:#000;font-weight:bold">=</span> []
+</span></span><span style="display:flex;"><span>    b <span style="color:#000;font-weight:bold">=</span> []
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">for</span> (j, skip) <span style="color:#000;font-weight:bold">in</span> Skip<span style="color:#000;font-weight:bold">.</span>items():
+</span></span><span style="display:flex;"><span>        vec <span style="color:#000;font-weight:bold">=</span> np<span style="color:#000;font-weight:bold">.</span>zeros(k)
+</span></span><span style="display:flex;"><span>        <span style="color:#000;font-weight:bold">for</span> idx <span style="color:#000;font-weight:bold">in</span> <span style="color:#0086b3">range</span>(<span style="color:#0086b3">len</span>(I)):
+</span></span><span style="display:flex;"><span>            ii, jj <span style="color:#000;font-weight:bold">=</span> I[idx]
+</span></span><span style="display:flex;"><span>            <span style="color:#000;font-weight:bold">if</span> (jj <span style="color:#000;font-weight:bold">==</span> j):
+</span></span><span style="display:flex;"><span>                vec[idx] <span style="color:#000;font-weight:bold">=</span> <span style="color:#099">1</span>
+</span></span><span style="display:flex;"><span>        A<span style="color:#000;font-weight:bold">.</span>append(vec)
+</span></span><span style="display:flex;"><span>        b<span style="color:#000;font-weight:bold">.</span>append(y[j])
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">return</span> A, b
+</span></span></code></pre></div><p><strong>Primal formulation</strong></p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">primal_from_dual</span>(Gamma, x, y, M, N, C, k, eps):
+</span></span><span style="display:flex;"><span>    Ax, bx, I <span style="color:#000;font-weight:bold">=</span> linear_constraints_x(Gamma, M, N, k, eps)
+</span></span><span style="display:flex;"><span>    Ay, by <span style="color:#000;font-weight:bold">=</span> linear_constraints_y(Gamma, M, N, k, eps)
+</span></span><span style="display:flex;"><span>    <span style="color:#998;font-style:italic"># Distance vector</span>
+</span></span><span style="display:flex;"><span>    v <span style="color:#000;font-weight:bold">=</span> np<span style="color:#000;font-weight:bold">.</span>zeros(k)
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">for</span> idx <span style="color:#000;font-weight:bold">in</span> <span style="color:#0086b3">range</span>(<span style="color:#0086b3">len</span>(I)):
+</span></span><span style="display:flex;"><span>        i, j <span style="color:#000;font-weight:bold">=</span> I[idx]
+</span></span><span style="display:flex;"><span>        v[idx] <span style="color:#000;font-weight:bold">=</span> C[i, j]
+</span></span><span style="display:flex;"><span>    <span style="color:#998;font-style:italic"># Variable</span>
+</span></span><span style="display:flex;"><span>    z <span style="color:#000;font-weight:bold">=</span> cp<span style="color:#000;font-weight:bold">.</span>Variable(k)
+</span></span><span style="display:flex;"><span>    <span style="color:#998;font-style:italic"># Objective function</span>
+</span></span><span style="display:flex;"><span>    obj <span style="color:#000;font-weight:bold">=</span> cp<span style="color:#000;font-weight:bold">.</span>Minimize(v<span style="color:#000;font-weight:bold">.</span>T <span style="color:#000;font-weight:bold">@</span> z)
+</span></span><span style="display:flex;"><span>    <span style="color:#998;font-style:italic"># Constraints</span>
+</span></span><span style="display:flex;"><span>    constraints <span style="color:#000;font-weight:bold">=</span> [z <span style="color:#000;font-weight:bold">&gt;=</span> <span style="color:#099">0</span>]
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">for</span> A, b <span style="color:#000;font-weight:bold">in</span> <span style="color:#0086b3">zip</span>(Ax, bx):
+</span></span><span style="display:flex;"><span>        constraints<span style="color:#000;font-weight:bold">.</span>append(A <span style="color:#000;font-weight:bold">@</span> z <span style="color:#000;font-weight:bold">&gt;=</span> b)
+</span></span><span style="display:flex;"><span>    <span style="color:#998;font-style:italic"># Constraints for A_y @ z =y</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">for</span> A, b <span style="color:#000;font-weight:bold">in</span> <span style="color:#0086b3">zip</span>(Ay, by):
+</span></span><span style="display:flex;"><span>        constraints<span style="color:#000;font-weight:bold">.</span>append(A <span style="color:#000;font-weight:bold">@</span> z <span style="color:#000;font-weight:bold">&gt;=</span> b)
+</span></span><span style="display:flex;"><span>    <span style="color:#998;font-style:italic"># Solve the LP problem</span>
+</span></span><span style="display:flex;"><span>    problem <span style="color:#000;font-weight:bold">=</span> cp<span style="color:#000;font-weight:bold">.</span>Problem(obj, constraints)
+</span></span><span style="display:flex;"><span>    sol <span style="color:#000;font-weight:bold">=</span> problem<span style="color:#000;font-weight:bold">.</span>solve()
+</span></span><span style="display:flex;"><span>    <span style="color:#0086b3">print</span>(<span style="color:#d14">f</span><span style="color:#d14">&#34;Min &lt;c, z&gt; = </span><span style="color:#d14">{</span>sol<span style="color:#d14">}</span><span style="color:#d14">&#34;</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#998;font-style:italic"># print(z.value)</span>
+</span></span><span style="display:flex;"><span>    Z <span style="color:#000;font-weight:bold">=</span> z<span style="color:#000;font-weight:bold">.</span>value
+</span></span><span style="display:flex;"><span>    <span style="color:#998;font-style:italic"># Gamma</span>
+</span></span><span style="display:flex;"><span>    Gamma <span style="color:#000;font-weight:bold">=</span> Gamma<span style="color:#000;font-weight:bold">.</span>copy()
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">for</span> idx <span style="color:#000;font-weight:bold">in</span> <span style="color:#0086b3">range</span>(k):
+</span></span><span style="display:flex;"><span>        i, j <span style="color:#000;font-weight:bold">=</span> I[idx]
+</span></span><span style="display:flex;"><span>        Gamma[i, j] <span style="color:#000;font-weight:bold">=</span> Z[idx]
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">return</span> Gamma
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>Gamma <span style="color:#000;font-weight:bold">=</span> primal_from_dual(Gamma_0, x, y, M, N, C, k, eps)
+</span></span></code></pre></div><pre><code>Min &lt;c, z&gt; = 3.689743876622332e-06
+</code></pre>
+<h3 id="optimal-transportation-map">Optimal transportation map</h3>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>fig <span style="color:#000;font-weight:bold">=</span> plt<span style="color:#000;font-weight:bold">.</span>figure(figsize<span style="color:#000;font-weight:bold">=</span>(<span style="color:#099">3.5</span>, <span style="color:#099">3.5</span>))
+</span></span><span style="display:flex;"><span>plt<span style="color:#000;font-weight:bold">.</span>imshow(Gamma)
+</span></span><span style="display:flex;"><span>plt<span style="color:#000;font-weight:bold">.</span>title(<span style="color:#d14">&#34;Optimal transportation map $\gamma_j(x)$&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#000;font-weight:bold">.</span>show()
+</span></span></code></pre></div><p><img src="output_44_0.png" alt="png"></p>
+<p><strong>Marginal distributions</strong></p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">marginal_dist</span>(Gamma, M, N, i):
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">if</span> i <span style="color:#000;font-weight:bold">==</span> <span style="color:#099">0</span>:
+</span></span><span style="display:flex;"><span>        g<span style="color:#000;font-weight:bold">=</span> np<span style="color:#000;font-weight:bold">.</span>zeros(M)
+</span></span><span style="display:flex;"><span>        <span style="color:#000;font-weight:bold">for</span> i <span style="color:#000;font-weight:bold">in</span> <span style="color:#0086b3">range</span>(M):
+</span></span><span style="display:flex;"><span>            <span style="color:#000;font-weight:bold">for</span> j <span style="color:#000;font-weight:bold">in</span> <span style="color:#0086b3">range</span>(N):
+</span></span><span style="display:flex;"><span>                g[i] <span style="color:#000;font-weight:bold">+=</span> Gamma[i, j]
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">else</span>:
+</span></span><span style="display:flex;"><span>        g <span style="color:#000;font-weight:bold">=</span> np<span style="color:#000;font-weight:bold">.</span>zeros(N)
+</span></span><span style="display:flex;"><span>        <span style="color:#000;font-weight:bold">for</span> i <span style="color:#000;font-weight:bold">in</span> <span style="color:#0086b3">range</span>(M):
+</span></span><span style="display:flex;"><span>            <span style="color:#000;font-weight:bold">for</span> j <span style="color:#000;font-weight:bold">in</span> <span style="color:#0086b3">range</span>(N):
+</span></span><span style="display:flex;"><span>                g[j] <span style="color:#000;font-weight:bold">+=</span> Gamma[i,j]
+</span></span><span style="display:flex;"><span>    g <span style="color:#000;font-weight:bold">/=</span> g<span style="color:#000;font-weight:bold">.</span>sum()
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">return</span> g
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>gx <span style="color:#000;font-weight:bold">=</span> marginal_dist(Gamma, M, N, <span style="color:#099">0</span>)
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>plt<span style="color:#000;font-weight:bold">.</span>bar(<span style="color:#0086b3">range</span>(M), x, color <span style="color:#000;font-weight:bold">=</span> <span style="color:#d14">&#34;darkblue&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#000;font-weight:bold">.</span>bar(<span style="color:#0086b3">range</span>(M), gx, color <span style="color:#000;font-weight:bold">=</span> <span style="color:#d14">&#34;darkred&#34;</span>, alpha <span style="color:#000;font-weight:bold">=</span> <span style="color:#099">.5</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#000;font-weight:bold">.</span>show()
+</span></span></code></pre></div><p><img src="output_48_0.png" alt="png"></p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>gy <span style="color:#000;font-weight:bold">=</span> marginal_dist(Gamma, M, N, <span style="color:#099">1</span>)
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>plt<span style="color:#000;font-weight:bold">.</span>bar(<span style="color:#0086b3">range</span>(N), y, color <span style="color:#000;font-weight:bold">=</span> <span style="color:#d14">&#34;darkblue&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#000;font-weight:bold">.</span>bar(<span style="color:#0086b3">range</span>(N), gy, color <span style="color:#000;font-weight:bold">=</span> <span style="color:#d14">&#34;darkred&#34;</span>, alpha <span style="color:#000;font-weight:bold">=</span> <span style="color:#099">.5</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#000;font-weight:bold">.</span>show()
+</span></span></code></pre></div><p><img src="output_50_0.png" alt="png"></p>
+<h3 id="exact-solution-with-linear-programming">Exact solution with linear programming</h3>
+<p><strong>Dual Formulation</strong></p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">lp_dual</span>(x, y, M, N, C):
+</span></span><span style="display:flex;"><span>    <span style="color:#998;font-style:italic"># Variables psi and phi</span>
+</span></span><span style="display:flex;"><span>    psi <span style="color:#000;font-weight:bold">=</span> cp<span style="color:#000;font-weight:bold">.</span>Variable(N)
+</span></span><span style="display:flex;"><span>    phi <span style="color:#000;font-weight:bold">=</span> cp<span style="color:#000;font-weight:bold">.</span>Variable(M)
+</span></span><span style="display:flex;"><span>    <span style="color:#998;font-style:italic"># Objective funtion</span>
+</span></span><span style="display:flex;"><span>    dual_obj <span style="color:#000;font-weight:bold">=</span> cp<span style="color:#000;font-weight:bold">.</span>Maximize(phi <span style="color:#000;font-weight:bold">@</span> x<span style="color:#000;font-weight:bold">.</span>T <span style="color:#000;font-weight:bold">+</span> psi <span style="color:#000;font-weight:bold">@</span> y<span style="color:#000;font-weight:bold">.</span>T)
+</span></span><span style="display:flex;"><span>    <span style="color:#998;font-style:italic"># Constraints</span>
+</span></span><span style="display:flex;"><span>    dual_constraints <span style="color:#000;font-weight:bold">=</span> [psi <span style="color:#000;font-weight:bold">&gt;=</span> <span style="color:#099">0</span>, phi <span style="color:#000;font-weight:bold">&gt;=</span> <span style="color:#099">0</span>]
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">for</span> i <span style="color:#000;font-weight:bold">in</span> <span style="color:#0086b3">range</span>(M):
+</span></span><span style="display:flex;"><span>        <span style="color:#000;font-weight:bold">for</span> j <span style="color:#000;font-weight:bold">in</span> <span style="color:#0086b3">range</span>(N):
+</span></span><span style="display:flex;"><span>            dual_constraints<span style="color:#000;font-weight:bold">.</span>append(phi[i] <span style="color:#000;font-weight:bold">+</span> psi[j] <span style="color:#000;font-weight:bold">-</span> C[i, j] <span style="color:#000;font-weight:bold">&lt;=</span> <span style="color:#099">0</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#998;font-style:italic"># Solve the dual problem</span>
+</span></span><span style="display:flex;"><span>    dual_problem <span style="color:#000;font-weight:bold">=</span> cp<span style="color:#000;font-weight:bold">.</span>Problem(dual_obj, dual_constraints)
+</span></span><span style="display:flex;"><span>    dual_sol <span style="color:#000;font-weight:bold">=</span> dual_problem<span style="color:#000;font-weight:bold">.</span>solve()
+</span></span><span style="display:flex;"><span>    <span style="color:#0086b3">print</span>(<span style="color:#d14">f</span><span style="color:#d14">&#34;max &lt;psi, y&gt; + &lt;phi, x&gt; = </span><span style="color:#d14">{</span>dual_sol<span style="color:#d14">}</span><span style="color:#d14">&#34;</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">return</span> psi<span style="color:#000;font-weight:bold">.</span>value, phi<span style="color:#000;font-weight:bold">.</span>value
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>psi_lp, phi_lp <span style="color:#000;font-weight:bold">=</span> lp_dual(x, y, M, N, C)
+</span></span></code></pre></div><pre><code>max &lt;psi, y&gt; + &lt;phi, x&gt; = 3.689743876592917e-06
+</code></pre>
+<p><strong>\(\psi^{<em>}\) and \(\psi_{lp}^{</em>}\)</strong></p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>plt<span style="color:#000;font-weight:bold">.</span>plot(psi_lp, label <span style="color:#000;font-weight:bold">=</span> <span style="color:#d14">&#34;LP&#34;</span>, color <span style="color:#000;font-weight:bold">=</span> <span style="color:#d14">&#34;darkblue&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#000;font-weight:bold">.</span>plot(psi, label <span style="color:#000;font-weight:bold">=</span> <span style="color:#d14">&#34;Gradient ascent&#34;</span>, color <span style="color:#000;font-weight:bold">=</span> <span style="color:#d14">&#34;darkred&#34;</span>, alpha <span style="color:#000;font-weight:bold">=</span> <span style="color:#099">.5</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#000;font-weight:bold">.</span>legend()
+</span></span><span style="display:flex;"><span>plt<span style="color:#000;font-weight:bold">.</span>title(<span style="color:#d14">&#34;$\psi^{*}$&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#000;font-weight:bold">.</span>show()
+</span></span></code></pre></div><p><img src="output_56_0.png" alt="png"></p>
+<p><strong>\(\phi^{<em>}\) and \(\phi_{lp}^{</em>}\)</strong></p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>plt<span style="color:#000;font-weight:bold">.</span>plot(phi_lp, label <span style="color:#000;font-weight:bold">=</span> <span style="color:#d14">&#34;LP&#34;</span>, color <span style="color:#000;font-weight:bold">=</span> <span style="color:#d14">&#34;darkblue&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#000;font-weight:bold">.</span>plot(phi, label <span style="color:#000;font-weight:bold">=</span> <span style="color:#d14">&#34;Gradient ascent&#34;</span>, color <span style="color:#000;font-weight:bold">=</span> <span style="color:#d14">&#34;darkred&#34;</span>, alpha <span style="color:#000;font-weight:bold">=</span> <span style="color:#099">.5</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#000;font-weight:bold">.</span>legend()
+</span></span><span style="display:flex;"><span>plt<span style="color:#000;font-weight:bold">.</span>title(<span style="color:#d14">&#34;$\phi^{*}$&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#000;font-weight:bold">.</span>show()
+</span></span></code></pre></div><p><img src="output_58_0.png" alt="png"></p>
+<p><strong>Primal formulation</strong></p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">lp_primal</span>(x, y, M, N, C):
+</span></span><span style="display:flex;"><span>    z <span style="color:#000;font-weight:bold">=</span> cp<span style="color:#000;font-weight:bold">.</span>Variable(M <span style="color:#000;font-weight:bold">*</span> N)
+</span></span><span style="display:flex;"><span>    b <span style="color:#000;font-weight:bold">=</span> np<span style="color:#000;font-weight:bold">.</span>concatenate((x, y))
+</span></span><span style="display:flex;"><span>    Ax <span style="color:#000;font-weight:bold">=</span> np<span style="color:#000;font-weight:bold">.</span>kron(np<span style="color:#000;font-weight:bold">.</span>identity(M), np<span style="color:#000;font-weight:bold">.</span>ones(N))
+</span></span><span style="display:flex;"><span>    Ay <span style="color:#000;font-weight:bold">=</span> np<span style="color:#000;font-weight:bold">.</span>kron(np<span style="color:#000;font-weight:bold">.</span>ones(M), np<span style="color:#000;font-weight:bold">.</span>identity(N))
+</span></span><span style="display:flex;"><span>    A <span style="color:#000;font-weight:bold">=</span> np<span style="color:#000;font-weight:bold">.</span>concatenate((Ax, Ay), <span style="color:#099">0</span>)
+</span></span><span style="display:flex;"><span>    c <span style="color:#000;font-weight:bold">=</span> C<span style="color:#000;font-weight:bold">.</span>flatten()
+</span></span><span style="display:flex;"><span>    primal_obj <span style="color:#000;font-weight:bold">=</span> cp<span style="color:#000;font-weight:bold">.</span>Minimize(c<span style="color:#000;font-weight:bold">.</span>T <span style="color:#000;font-weight:bold">@</span> z)
+</span></span><span style="display:flex;"><span>    primal_constraints <span style="color:#000;font-weight:bold">=</span> [z <span style="color:#000;font-weight:bold">&gt;=</span> <span style="color:#099">0</span>, A <span style="color:#000;font-weight:bold">@</span> z <span style="color:#000;font-weight:bold">&gt;=</span> b]
+</span></span><span style="display:flex;"><span>    primal_problem <span style="color:#000;font-weight:bold">=</span> cp<span style="color:#000;font-weight:bold">.</span>Problem(primal_obj, primal_constraints)
+</span></span><span style="display:flex;"><span>    primal_sol <span style="color:#000;font-weight:bold">=</span> primal_problem<span style="color:#000;font-weight:bold">.</span>solve()
+</span></span><span style="display:flex;"><span>    <span style="color:#0086b3">print</span>(<span style="color:#d14">f</span><span style="color:#d14">&#34;Min &lt;c, z&gt; = </span><span style="color:#d14">{</span>primal_sol<span style="color:#d14">}</span><span style="color:#d14">&#34;</span>)
+</span></span><span style="display:flex;"><span>    Z <span style="color:#000;font-weight:bold">=</span> z<span style="color:#000;font-weight:bold">.</span>value<span style="color:#000;font-weight:bold">.</span>reshape(M, N)
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">return</span> Z
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>Gamma_lp <span style="color:#000;font-weight:bold">=</span> lp_primal(x, y, M, N, C)
+</span></span></code></pre></div><pre><code>Min &lt;c, z&gt; = 3.689743876055072e-06
+</code></pre>
+<p><strong>Optimal transportation map</strong></p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>fig, axes <span style="color:#000;font-weight:bold">=</span> plt<span style="color:#000;font-weight:bold">.</span>subplots(<span style="color:#099">1</span>, <span style="color:#099">2</span>, figsize<span style="color:#000;font-weight:bold">=</span>(<span style="color:#099">7</span>,<span style="color:#099">3.5</span>))
+</span></span><span style="display:flex;"><span>axes[<span style="color:#099">0</span>]<span style="color:#000;font-weight:bold">.</span>set_title(<span style="color:#d14">&#34;Linear program&#34;</span>)
+</span></span><span style="display:flex;"><span>axes[<span style="color:#099">0</span>]<span style="color:#000;font-weight:bold">.</span>imshow(Gamma_lp)
+</span></span><span style="display:flex;"><span>axes[<span style="color:#099">1</span>]<span style="color:#000;font-weight:bold">.</span>imshow(Gamma)
+</span></span><span style="display:flex;"><span>axes[<span style="color:#099">1</span>]<span style="color:#000;font-weight:bold">.</span>set_title(<span style="color:#d14">&#34;Gradient ascent&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#000;font-weight:bold">.</span>show()
+</span></span></code></pre></div><p><img src="output_63_0.png" alt="png"></p>
+<p><strong>Marginal distributions</strong></p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>gx_lp <span style="color:#000;font-weight:bold">=</span> marginal_dist(Gamma_lp, M, N, <span style="color:#099">0</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#000;font-weight:bold">.</span>bar(<span style="color:#0086b3">range</span>(N), gx, color <span style="color:#000;font-weight:bold">=</span> <span style="color:#d14">&#34;darkblue&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#000;font-weight:bold">.</span>bar(<span style="color:#0086b3">range</span>(N), gx_lp, color <span style="color:#000;font-weight:bold">=</span> <span style="color:#d14">&#34;darkred&#34;</span>, alpha <span style="color:#000;font-weight:bold">=</span> <span style="color:#099">.5</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#000;font-weight:bold">.</span>show()
+</span></span></code></pre></div><p><img src="output_65_0.png" alt="png"></p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>gy_lp <span style="color:#000;font-weight:bold">=</span> marginal_dist(Gamma, M, N, <span style="color:#099">1</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#000;font-weight:bold">.</span>bar(<span style="color:#0086b3">range</span>(N), gy, color <span style="color:#000;font-weight:bold">=</span> <span style="color:#d14">&#34;darkblue&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#000;font-weight:bold">.</span>bar(<span style="color:#0086b3">range</span>(N), gy_lp, color <span style="color:#000;font-weight:bold">=</span> <span style="color:#d14">&#34;darkred&#34;</span>, alpha <span style="color:#000;font-weight:bold">=</span> <span style="color:#099">.5</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#000;font-weight:bold">.</span>show()
+</span></span></code></pre></div><p><img src="output_66_0.png" alt="png"></p>
+<h3 id="references">References</h3>
+<ol>
+<li>Filippo Santambrogio, <strong>Optimal Transport for Applied Mathematicians</strong></li>
+<li>Gabriel Peyré, <strong><a href="https://speakerdeck.com/gpeyre/le-transport-optimal-de-gaspard-monge-a-la-science-des-donnees">Le transport optimal: de Gaspard Monge à la science des données</a></strong></li>
+<li>David Gu, <strong>Optimal Transportation: Duality Theory</strong></li>
+<li>Andersen Ang, <strong>Projected Gradient Algorithm</strong></li>
+</ol>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"></code></pre></div>
+</main>
+
+  <footer>
+  <script defer src="//yihui.org/js/math-code.js"></script>
+<script defer src="//mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+
+<script defer src="//yihui.org/js/center-img.js"></script>
+
+  
+  <hr/>
+  © <a href="https://istmarc.github.io">Marc</a> 2024 &ndash; 2024 | <a href="https://github.com/istmarc">Github</a>
+  
+  </footer>
+  </body>
+</html>
+
