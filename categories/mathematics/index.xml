@@ -6,15 +6,14 @@
     <description>Recent content in Mathematics on Marco&#39;s website</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>fr</language>
-    <lastBuildDate>Sat, 26 Oct 2024 00:00:00 +0000</lastBuildDate><atom:link href="/categories/mathematics/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sun, 27 Oct 2024 00:00:00 +0000</lastBuildDate><atom:link href="/categories/mathematics/index.xml" rel="self" type="application/rss+xml" />
     <item>
-      <title>Gradient ascent for semi discrete optimal transport</title>
-      <link>/post/2024/10/26/gradient-ascent-for-semi-discrete-optimal-transport/</link>
-      <pubDate>Sat, 26 Oct 2024 00:00:00 +0000</pubDate>
+      <title>On designing Tenseur, A C&#43;&#43; tensor library with lazy evaluation</title>
+      <link>/post/2024/10/27/on-designing-tenseur-a-c-tensor-library-with-lazy-evaluation/</link>
+      <pubDate>Sun, 27 Oct 2024 00:00:00 +0000</pubDate>
       
-      <guid>/post/2024/10/26/gradient-ascent-for-semi-discrete-optimal-transport/</guid>
-      <description>In this post, we explore how the gradient ascent algorithm can be used to solve the semi discrete optimal transport problem. We will show a step by step implementation of this technique and showcase its effectiveness in solving the problem.
-Importing libraries import numpy as np from scipy import stats import matplotlib.pyplot as plt plt.rcParams[&amp;#39;text.usetex&amp;#39;] = True plt.style.use(&amp;#34;science&amp;#34;) import cvxpy as cp import math import matplotlib as mpl from random import shuffle import pandas as pd Semi discrete optimal transport $$ \begin{align} \text{min} \big\{ \int_X \sum_j c_{T}(x, y_j) d\gamma_j(x) : \int_X d\gamma_j(x) = \nu_j, \sum_j d\gamma_j(x) = d\mu(x) \big\} \end{align} $$ where</description>
+      <guid>/post/2024/10/27/on-designing-tenseur-a-c-tensor-library-with-lazy-evaluation/</guid>
+      <description>Tenseur is a header only c++ numerical library. It&amp;rsquo;s designed to provide high-performance linear algebra and multilinear algebra operations by laveraging the capabilities of BLAS (Basic Linear Algebra Subprograms) and SIMD (Single Instruction, Multiple Data) backends. This library, currently in development, aims to offer a robust framework for numerical computations focusing on both performance and easy of use. In this blog post, we will first describe some design decisions. Then we will show some of its features and advantages over other libraries.</description>
     </item>
     
     <item>
@@ -23,9 +22,7 @@ Importing libraries import numpy as np from scipy import stats import matplotlib
       <pubDate>Sat, 26 Oct 2024 00:00:00 +0000</pubDate>
       
       <guid>/post/2024/10/26/minimum-cost-bipartite-matching/</guid>
-      <description>Monge formulation Let \( (\Omega_{X}, F_{X}, \mu) \) and \( (\Omega_{Y}, F_{Y}, \nu) \) be two probability spaces with \(\mu\) and \(\nu\) discrete measures. The Monge formulation of the optimal transport problem is
-$$\min \left\{ \sum_{X} c_{T}(x) \mu(x) : T_{\#}(\mu) = \nu \right\}$$ where \( T_{\#} \) is the pushforward measure of \(\mu\) by \(T\).
-If \( X: \Omega_{X} \rightarrow \mathbb{R} \) and \( Y: \Omega_{Y} \rightarrow \mathbb{R} \) are two discrete random variables with \( \Omega_{X} = \Omega_{Y} = [1, \ldots, N] \), this formulation is equivalent to</description>
+      <description>The optimal transport problem is a fascinating area in applied mathematics and optimization. One way to tackle this problem is through minimum cost bipartite matching. In this blog, we will show how this problem can be represented by a bipartite graph where the edges connecting the nodes are weighted by the transportation cost and then we will show step by step how to use minimum cost bipartite matching to solve the problem.</description>
     </item>
     
   </channel>

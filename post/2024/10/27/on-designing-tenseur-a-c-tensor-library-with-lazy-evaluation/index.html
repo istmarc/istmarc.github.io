@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>On designing Tenseur, A C&#43;&#43; tensor library with lazy evaluation | Marco&#39;s website</title>
+    <link rel="stylesheet" href="/css/style.css" />
+    <link rel="stylesheet" href="/css/fonts.css" />
+    
+  </head>
+
+  <body>
+    <nav>
+    <ul class="menu">
+      
+      <li><a href="/">Acceuil</a></li>
+      
+      <li><a href="/about/">À propos</a></li>
+      
+      <li><a href="/categories/">Catégories</a></li>
+      
+      <li><a href="/tags/">Tags</a></li>
+      
+      <li><a href="/post/">Blog</a></li>
+      
+      <li><a href="/index.xml">S&#39;abonner</a></li>
+      
+    </ul>
+    <hr/>
+    </nav>
+
+<div class="article-meta">
+<h1><span class="title">On designing Tenseur, A C++ tensor library with lazy evaluation</span></h1>
+<h2 class="author">Marc</h2>
+<h2 class="date">2024/10/27</h2>
+</div>
+
+<main>
+<p><a href="https://github.com/istmarc/tenseur/tree/main">Tenseur</a> is a header only c++ numerical library. It&rsquo;s designed to provide high-performance linear algebra and multilinear algebra operations by laveraging the capabilities of BLAS (Basic Linear Algebra Subprograms) and SIMD (Single Instruction, Multiple Data) backends. This library, currently in development, aims to offer a robust framework for numerical computations focusing on both performance and easy of use. In this blog post, we will first describe some design decisions. Then we will show some of its features and advantages over other libraries.</p>
+<h3 id="lazy-evaluation">Lazy evaluation</h3>
+<p>First, let&rsquo;s explore lazy evaluation of expressions. Lazy evaluation means that expressions are not computed immediately. Instead, they are evaluated only when necessary. This approach can lead to significant performance improvement.</p>
+<h3 id="expression-template">Expression template</h3>
+<p>Expression template is a powerful technique that enables representing mathematical expression as types. This allows for compile-time optimizations. The compiler can analyze the expressions and generated efficient code.</p>
+<h3 id="combining-lazy-evaluation-and-expression-templates">Combining lazy evaluation and expression templates</h3>
+<p>One of the design decisions of Tenseur is to combine both lazy evaluation and expression templates. By combining these two features, the library can execute complex mathematical expressions with minimal runtime overhead. Here are some of the advantages regarding these two features:</p>
+<ul>
+<li>Deferred execution: The expressions are not calculated automatically. Instead, they are described by a templated object. The actual computation happens only when required by calling a method called <code>eval()</code> that returns the evaluated expression.</li>
+<li>Performance optimization: Many unecessary computations are avoided by stopping computations.</li>
+<li>Expression composition: The library construct an expression graph that is evaluated recursively when a result is needed.</li>
+<li>Memory efficiency: The overall memory footprint is reduced by not storing intermediate results except when they are needed.</li>
+<li>Compatibility and assignment from expressions: Combining these two techniques allow the compiler to optimize the execution of expressions more efficiently. It also makes it possible to assign a tensor from an expression.</li>
+</ul>
+<p>Here&rsquo;s a step by step description of how expresions and templates metaprogramming are combined in C++ to create lazy evaluation of expressions:</p>
+<ol>
+<li>Define expression class, this is a base class for all expressions.</li>
+</ol>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#998;font-style:italic">/// Represent an expression
+</span></span></span><span style="display:flex;"><span><span style="color:#998;font-style:italic"></span><span style="color:#000;font-weight:bold">template</span> <span style="color:#000;font-weight:bold">&lt;</span><span style="color:#000;font-weight:bold">typename</span> Derived<span style="color:#000;font-weight:bold">&gt;</span> <span style="color:#000;font-weight:bold">class</span> <span style="color:#458;font-weight:bold">expr</span> {
+</span></span><span style="display:flex;"><span> <span style="color:#000;font-weight:bold">protected</span><span style="color:#000;font-weight:bold">:</span>
+</span></span><span style="display:flex;"><span>   expr() <span style="color:#000;font-weight:bold">=</span> <span style="color:#000;font-weight:bold">default</span>;
+</span></span><span style="display:flex;"><span>   expr(<span style="color:#000;font-weight:bold">const</span> expr <span style="color:#000;font-weight:bold">&amp;</span>) <span style="color:#000;font-weight:bold">=</span> <span style="color:#000;font-weight:bold">default</span>;
+</span></span><span style="display:flex;"><span>   expr(expr <span style="color:#000;font-weight:bold">&amp;&amp;</span>) <span style="color:#000;font-weight:bold">=</span> <span style="color:#000;font-weight:bold">default</span>;
+</span></span><span style="display:flex;"><span>};
+</span></span></code></pre></div><ol start="2">
+<li>Define expressions: adding, sub, mult, div. An example for adding expression is described below:</li>
+</ol>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#000;font-weight:bold">template</span> <span style="color:#000;font-weight:bold">&lt;</span><span style="color:#000;font-weight:bold">typename</span> left_expr, <span style="color:#000;font-weight:bold">typename</span> right_expr<span style="color:#000;font-weight:bold">&gt;</span>
+</span></span><span style="display:flex;"><span>   <span style="color:#000;font-weight:bold">requires</span> <span style="color:#000;font-weight:bold">::</span>ten<span style="color:#000;font-weight:bold">::</span>is_expr<span style="color:#000;font-weight:bold">&lt;</span>std<span style="color:#000;font-weight:bold">::</span>remove_cvref_t<span style="color:#000;font-weight:bold">&lt;</span>left_expr<span style="color:#000;font-weight:bold">&gt;&gt;</span> <span style="color:#000;font-weight:bold">&amp;&amp;</span>
+</span></span><span style="display:flex;"><span>            <span style="color:#000;font-weight:bold">::</span>ten<span style="color:#000;font-weight:bold">::</span>is_expr<span style="color:#000;font-weight:bold">&lt;</span>std<span style="color:#000;font-weight:bold">::</span>remove_cvref_t<span style="color:#000;font-weight:bold">&lt;</span>right_expr<span style="color:#000;font-weight:bold">&gt;&gt;</span>
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">auto</span> <span style="color:#000;font-weight:bold">operator</span><span style="color:#000;font-weight:bold">+</span>(left_expr <span style="color:#000;font-weight:bold">&amp;&amp;</span>left, right_expr <span style="color:#000;font-weight:bold">&amp;&amp;</span>right) {
+</span></span><span style="display:flex;"><span>   <span style="color:#000;font-weight:bold">using</span> L <span style="color:#000;font-weight:bold">=</span> std<span style="color:#000;font-weight:bold">::</span>remove_cvref_t<span style="color:#000;font-weight:bold">&lt;</span>left_expr<span style="color:#000;font-weight:bold">&gt;</span>;
+</span></span><span style="display:flex;"><span>   <span style="color:#000;font-weight:bold">using</span> R <span style="color:#000;font-weight:bold">=</span> std<span style="color:#000;font-weight:bold">::</span>remove_cvref_t<span style="color:#000;font-weight:bold">&lt;</span>right_expr<span style="color:#000;font-weight:bold">&gt;</span>;
+</span></span><span style="display:flex;"><span>   <span style="color:#000;font-weight:bold">return</span> <span style="color:#000;font-weight:bold">::</span>ten<span style="color:#000;font-weight:bold">::</span>binary_expr<span style="color:#000;font-weight:bold">&lt;</span>
+</span></span><span style="display:flex;"><span>       <span style="color:#000;font-weight:bold">typename</span> L<span style="color:#000;font-weight:bold">::</span>node_type, <span style="color:#000;font-weight:bold">typename</span> R<span style="color:#000;font-weight:bold">::</span>node_type,
+</span></span><span style="display:flex;"><span>       <span style="color:#000;font-weight:bold">::</span>ten<span style="color:#000;font-weight:bold">::</span>functional<span style="color:#000;font-weight:bold">::</span>binary_func<span style="color:#000;font-weight:bold">&lt;::</span>ten<span style="color:#000;font-weight:bold">::</span>binary_operation<span style="color:#000;font-weight:bold">::</span>add<span style="color:#000;font-weight:bold">&gt;::</span>func<span style="color:#000;font-weight:bold">&gt;</span>(
+</span></span><span style="display:flex;"><span>       left.node(), right.node());
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">template</span> <span style="color:#000;font-weight:bold">&lt;</span><span style="color:#000;font-weight:bold">typename</span> T, <span style="color:#000;font-weight:bold">typename</span> E<span style="color:#000;font-weight:bold">&gt;</span>
+</span></span><span style="display:flex;"><span>   <span style="color:#000;font-weight:bold">requires</span> <span style="color:#000;font-weight:bold">::</span>ten<span style="color:#000;font-weight:bold">::</span>is_expr<span style="color:#000;font-weight:bold">&lt;</span>std<span style="color:#000;font-weight:bold">::</span>remove_cvref_t<span style="color:#000;font-weight:bold">&lt;</span>E<span style="color:#000;font-weight:bold">&gt;&gt;</span> <span style="color:#000;font-weight:bold">&amp;&amp;</span>
+</span></span><span style="display:flex;"><span>            std<span style="color:#000;font-weight:bold">::</span>is_floating_point_v<span style="color:#000;font-weight:bold">&lt;</span>T<span style="color:#000;font-weight:bold">&gt;</span>
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">auto</span> <span style="color:#000;font-weight:bold">operator</span><span style="color:#000;font-weight:bold">+</span>(T <span style="color:#000;font-weight:bold">&amp;&amp;</span>scalar, E <span style="color:#000;font-weight:bold">&amp;&amp;</span>expr) {
+</span></span><span style="display:flex;"><span>   <span style="color:#000;font-weight:bold">using</span> R <span style="color:#000;font-weight:bold">=</span> std<span style="color:#000;font-weight:bold">::</span>remove_cvref_t<span style="color:#000;font-weight:bold">&lt;</span>E<span style="color:#000;font-weight:bold">&gt;</span>;
+</span></span><span style="display:flex;"><span>   <span style="color:#000;font-weight:bold">return</span> <span style="color:#000;font-weight:bold">::</span>ten<span style="color:#000;font-weight:bold">::</span>scalar<span style="color:#000;font-weight:bold">&lt;</span>T<span style="color:#000;font-weight:bold">&gt;</span>(scalar) <span style="color:#000;font-weight:bold">+</span> std<span style="color:#000;font-weight:bold">::</span>forward<span style="color:#000;font-weight:bold">&lt;</span>R<span style="color:#000;font-weight:bold">&gt;</span>(expr);
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">template</span> <span style="color:#000;font-weight:bold">&lt;</span><span style="color:#000;font-weight:bold">typename</span> E, <span style="color:#000;font-weight:bold">typename</span> T<span style="color:#000;font-weight:bold">&gt;</span>
+</span></span><span style="display:flex;"><span>   <span style="color:#000;font-weight:bold">requires</span> <span style="color:#000;font-weight:bold">::</span>ten<span style="color:#000;font-weight:bold">::</span>is_expr<span style="color:#000;font-weight:bold">&lt;</span>std<span style="color:#000;font-weight:bold">::</span>remove_cvref_t<span style="color:#000;font-weight:bold">&lt;</span>E<span style="color:#000;font-weight:bold">&gt;&gt;</span> <span style="color:#000;font-weight:bold">&amp;&amp;</span>
+</span></span><span style="display:flex;"><span>            std<span style="color:#000;font-weight:bold">::</span>is_floating_point_v<span style="color:#000;font-weight:bold">&lt;</span>T<span style="color:#000;font-weight:bold">&gt;</span>
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">auto</span> <span style="color:#000;font-weight:bold">operator</span><span style="color:#000;font-weight:bold">+</span>(E <span style="color:#000;font-weight:bold">&amp;&amp;</span>expr, T <span style="color:#000;font-weight:bold">&amp;&amp;</span>scalar) {
+</span></span><span style="display:flex;"><span>   <span style="color:#000;font-weight:bold">using</span> R <span style="color:#000;font-weight:bold">=</span> std<span style="color:#000;font-weight:bold">::</span>remove_cvref_t<span style="color:#000;font-weight:bold">&lt;</span>E<span style="color:#000;font-weight:bold">&gt;</span>;
+</span></span><span style="display:flex;"><span>   <span style="color:#000;font-weight:bold">return</span> std<span style="color:#000;font-weight:bold">::</span>forward<span style="color:#000;font-weight:bold">&lt;</span>R<span style="color:#000;font-weight:bold">&gt;</span>(expr) <span style="color:#000;font-weight:bold">+</span> <span style="color:#000;font-weight:bold">::</span>ten<span style="color:#000;font-weight:bold">::</span>scalar<span style="color:#000;font-weight:bold">&lt;</span>T<span style="color:#000;font-weight:bold">&gt;</span>(scalar);
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><ol start="3">
+<li>Define a scalar node and a scalar type</li>
+</ol>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#998;font-style:italic">/// \class scalar_operations
+</span></span></span><span style="display:flex;"><span><span style="color:#998;font-style:italic"></span><span style="color:#000;font-weight:bold">template</span> <span style="color:#000;font-weight:bold">&lt;</span><span style="color:#000;font-weight:bold">class</span> <span style="color:#458;font-weight:bold">T</span><span style="color:#000;font-weight:bold">&gt;</span> <span style="color:#000;font-weight:bold">struct</span> <span style="color:#458;font-weight:bold">scalar_operations</span> {
+</span></span><span style="display:flex;"><span>   <span style="color:#008080">[[nodiscard]]</span> <span style="color:#000;font-weight:bold">inline</span> <span style="color:#000;font-weight:bold">static</span> <span style="color:#000;font-weight:bold">constexpr</span> size_type rank() { <span style="color:#000;font-weight:bold">return</span> <span style="color:#099">0</span>; }
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#998;font-style:italic">/// \class scalar_node
+</span></span></span><span style="display:flex;"><span><span style="color:#998;font-style:italic">/// Node of scalar type
+</span></span></span><span style="display:flex;"><span><span style="color:#998;font-style:italic"></span><span style="color:#000;font-weight:bold">template</span> <span style="color:#000;font-weight:bold">&lt;</span><span style="color:#000;font-weight:bold">typename</span> __t<span style="color:#000;font-weight:bold">&gt;</span>
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">class</span> <span style="color:#458;font-weight:bold">scalar_node</span> <span style="color:#000;font-weight:bold">:</span> <span style="color:#000;font-weight:bold">public</span> scalar_operations<span style="color:#000;font-weight:bold">&lt;</span>scalar_node<span style="color:#000;font-weight:bold">&lt;</span>__t<span style="color:#000;font-weight:bold">&gt;&gt;</span> {
+</span></span><span style="display:flex;"><span>...
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#998;font-style:italic">/// \class scalar
+</span></span></span><span style="display:flex;"><span><span style="color:#998;font-style:italic">/// Hold a single value of type __t.
+</span></span></span><span style="display:flex;"><span><span style="color:#998;font-style:italic"></span><span style="color:#000;font-weight:bold">template</span> <span style="color:#000;font-weight:bold">&lt;</span><span style="color:#000;font-weight:bold">typename</span> __t<span style="color:#000;font-weight:bold">&gt;</span>
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">class</span> <span style="color:#458;font-weight:bold">scalar</span> <span style="color:#000;font-weight:bold">:</span> <span style="color:#000;font-weight:bold">public</span> expr<span style="color:#000;font-weight:bold">&lt;</span>scalar<span style="color:#000;font-weight:bold">&lt;</span>__t<span style="color:#000;font-weight:bold">&gt;&gt;</span>, <span style="color:#000;font-weight:bold">public</span> scalar_operations<span style="color:#000;font-weight:bold">&lt;</span>scalar<span style="color:#000;font-weight:bold">&lt;</span>__t<span style="color:#000;font-weight:bold">&gt;&gt;</span> {
+</span></span><span style="display:flex;"><span>...
+</span></span><span style="display:flex;"><span>};
+</span></span></code></pre></div><ol start="4">
+<li>Define a tensor node and a tensor type</li>
+</ol>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#998;font-style:italic">/// \class tensor_operations
+</span></span></span><span style="display:flex;"><span><span style="color:#998;font-style:italic">/// Tensor operations
+</span></span></span><span style="display:flex;"><span><span style="color:#998;font-style:italic"></span><span style="color:#000;font-weight:bold">template</span> <span style="color:#000;font-weight:bold">&lt;</span><span style="color:#000;font-weight:bold">class</span> <span style="color:#458;font-weight:bold">__t</span>, <span style="color:#000;font-weight:bold">class</span> <span style="color:#458;font-weight:bold">shape</span>, storage_order order, <span style="color:#000;font-weight:bold">class</span> <span style="color:#458;font-weight:bold">storage</span>,
+</span></span><span style="display:flex;"><span>          <span style="color:#000;font-weight:bold">class</span> <span style="color:#458;font-weight:bold">allocator</span><span style="color:#000;font-weight:bold">&gt;</span>
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">struct</span> <span style="color:#458;font-weight:bold">tensor_operations</span> {
+</span></span><span style="display:flex;"><span>...
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#998;font-style:italic">/// \class tensor_node
+</span></span></span><span style="display:flex;"><span><span style="color:#998;font-style:italic">/// Tensor node
+</span></span></span><span style="display:flex;"><span><span style="color:#998;font-style:italic"></span><span style="color:#000;font-weight:bold">template</span> <span style="color:#000;font-weight:bold">&lt;</span><span style="color:#000;font-weight:bold">class</span> <span style="color:#458;font-weight:bold">__t</span>, <span style="color:#000;font-weight:bold">class</span> <span style="color:#458;font-weight:bold">__shape</span>, storage_order __order, <span style="color:#000;font-weight:bold">class</span> <span style="color:#458;font-weight:bold">__storage</span>,
+</span></span><span style="display:flex;"><span>          <span style="color:#000;font-weight:bold">class</span> <span style="color:#458;font-weight:bold">__allocator</span><span style="color:#000;font-weight:bold">&gt;</span>
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">class</span> <span style="color:#458;font-weight:bold">tensor_node</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">:</span> <span style="color:#000;font-weight:bold">public</span> tensor_operations<span style="color:#000;font-weight:bold">&lt;</span>__t, __shape, __order, __storage, __allocator<span style="color:#000;font-weight:bold">&gt;</span> {
+</span></span><span style="display:flex;"><span>...
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#998;font-style:italic">/// Tensor represented by a multidimentional array.
+</span></span></span><span style="display:flex;"><span><span style="color:#998;font-style:italic"></span><span style="color:#000;font-weight:bold">template</span> <span style="color:#000;font-weight:bold">&lt;</span><span style="color:#000;font-weight:bold">class</span> <span style="color:#458;font-weight:bold">__t</span>, <span style="color:#000;font-weight:bold">class</span> <span style="color:#458;font-weight:bold">__shape</span>, storage_order __order <span style="color:#000;font-weight:bold">=</span> default_order,
+</span></span><span style="display:flex;"><span>          <span style="color:#000;font-weight:bold">class</span> <span style="color:#458;font-weight:bold">__storage</span> <span style="color:#000;font-weight:bold">=</span> default_storage<span style="color:#000;font-weight:bold">&lt;</span>__t, __shape<span style="color:#000;font-weight:bold">&gt;</span>,
+</span></span><span style="display:flex;"><span>          <span style="color:#000;font-weight:bold">class</span> <span style="color:#458;font-weight:bold">__allocator</span> <span style="color:#000;font-weight:bold">=</span> <span style="color:#000;font-weight:bold">typename</span> details<span style="color:#000;font-weight:bold">::</span>allocator_type<span style="color:#000;font-weight:bold">&lt;</span>__storage<span style="color:#000;font-weight:bold">&gt;::</span>type<span style="color:#000;font-weight:bold">&gt;</span>
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">class</span> <span style="color:#458;font-weight:bold">ranked_tensor</span> <span style="color:#000;font-weight:bold">final</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">:</span> <span style="color:#000;font-weight:bold">public</span> <span style="color:#000;font-weight:bold">::</span>ten<span style="color:#000;font-weight:bold">::</span>expr<span style="color:#000;font-weight:bold">&lt;</span>
+</span></span><span style="display:flex;"><span>          ranked_tensor<span style="color:#000;font-weight:bold">&lt;</span>__t, __shape, __order, __storage, __allocator<span style="color:#000;font-weight:bold">&gt;&gt;</span>,
+</span></span><span style="display:flex;"><span>      <span style="color:#000;font-weight:bold">public</span> <span style="color:#000;font-weight:bold">::</span>ten<span style="color:#000;font-weight:bold">::</span>tensor_operations<span style="color:#000;font-weight:bold">&lt;</span>__t, __shape, __order, __storage,
+</span></span><span style="display:flex;"><span>                                      __allocator<span style="color:#000;font-weight:bold">&gt;</span>,
+</span></span><span style="display:flex;"><span>      <span style="color:#000;font-weight:bold">public</span> <span style="color:#000;font-weight:bold">::</span>ten<span style="color:#000;font-weight:bold">::</span>tensor_base {
+</span></span><span style="display:flex;"><span>...
+</span></span><span style="display:flex;"><span>};
+</span></span></code></pre></div><ol start="5">
+<li>Define a unary node and unary expression</li>
+</ol>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#998;font-style:italic">// \class unary_node
+</span></span></span><span style="display:flex;"><span><span style="color:#998;font-style:italic">// Apply a function to a ten::Tensor or a ten::Scalar
+</span></span></span><span style="display:flex;"><span><span style="color:#998;font-style:italic"></span><span style="color:#000;font-weight:bold">template</span> <span style="color:#000;font-weight:bold">&lt;</span><span style="color:#000;font-weight:bold">class</span> <span style="color:#458;font-weight:bold">__input</span>, <span style="color:#000;font-weight:bold">class</span> <span style="color:#458;font-weight:bold">__output</span>, <span style="color:#000;font-weight:bold">template</span> <span style="color:#000;font-weight:bold">&lt;</span><span style="color:#000;font-weight:bold">typename</span>...<span style="color:#000;font-weight:bold">&gt;</span> <span style="color:#000;font-weight:bold">class</span> <span style="color:#458;font-weight:bold">__func</span>,
+</span></span><span style="display:flex;"><span>          <span style="color:#000;font-weight:bold">typename</span>... __args<span style="color:#000;font-weight:bold">&gt;</span>
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">class</span> <span style="color:#458;font-weight:bold">unary_node</span> {
+</span></span><span style="display:flex;"><span>...
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#998;font-style:italic">/// \class unary_expr
+</span></span></span><span style="display:flex;"><span><span style="color:#998;font-style:italic">/// Unary expression.
+</span></span></span><span style="display:flex;"><span><span style="color:#998;font-style:italic"></span><span style="color:#000;font-weight:bold">template</span> <span style="color:#000;font-weight:bold">&lt;</span><span style="color:#000;font-weight:bold">typename</span> __expr, <span style="color:#000;font-weight:bold">template</span> <span style="color:#000;font-weight:bold">&lt;</span><span style="color:#000;font-weight:bold">class</span><span style="color:#a61717;background-color:#e3d2d2">...</span><span style="color:#000;font-weight:bold">&gt;</span> <span style="color:#000;font-weight:bold">class</span> <span style="color:#458;font-weight:bold">__func</span>, <span style="color:#000;font-weight:bold">typename</span>... __args<span style="color:#000;font-weight:bold">&gt;</span>
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">class</span> <span style="color:#458;font-weight:bold">unary_expr</span> <span style="color:#000;font-weight:bold">:</span> <span style="color:#000;font-weight:bold">::</span>ten<span style="color:#000;font-weight:bold">::</span>expr<span style="color:#000;font-weight:bold">&lt;</span>unary_expr<span style="color:#000;font-weight:bold">&lt;</span>__expr, __func, __args...<span style="color:#000;font-weight:bold">&gt;&gt;</span> {
+</span></span><span style="display:flex;"><span>...
+</span></span><span style="display:flex;"><span>};
+</span></span></code></pre></div><p>The unary node holds a shared pointer to a unary node.</p>
+<ol start="6">
+<li>Define a binary node and binary expression</li>
+</ol>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#998;font-style:italic">// \class binary_node
+</span></span></span><span style="display:flex;"><span><span style="color:#998;font-style:italic">// Node of a binary expresion
+</span></span></span><span style="display:flex;"><span><span style="color:#998;font-style:italic">// Left and Right can be scalar_node, tensor_node or binary_node
+</span></span></span><span style="display:flex;"><span><span style="color:#998;font-style:italic"></span><span style="color:#000;font-weight:bold">template</span> <span style="color:#000;font-weight:bold">&lt;</span><span style="color:#000;font-weight:bold">class</span> <span style="color:#458;font-weight:bold">__left</span>, <span style="color:#000;font-weight:bold">class</span> <span style="color:#458;font-weight:bold">__right</span>, <span style="color:#000;font-weight:bold">class</span> <span style="color:#458;font-weight:bold">__output</span>,
+</span></span><span style="display:flex;"><span>          <span style="color:#000;font-weight:bold">template</span> <span style="color:#000;font-weight:bold">&lt;</span><span style="color:#000;font-weight:bold">typename</span>...<span style="color:#000;font-weight:bold">&gt;</span> <span style="color:#000;font-weight:bold">class</span> <span style="color:#458;font-weight:bold">__func</span>, <span style="color:#000;font-weight:bold">typename</span>... __args<span style="color:#000;font-weight:bold">&gt;</span>
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">class</span> <span style="color:#458;font-weight:bold">binary_node</span> {
+</span></span><span style="display:flex;"><span>...
+</span></span><span style="display:flex;"><span>};
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#998;font-style:italic">/// \class binary_expr
+</span></span></span><span style="display:flex;"><span><span style="color:#998;font-style:italic">/// Binary expression
+</span></span></span><span style="display:flex;"><span><span style="color:#998;font-style:italic">// left and right can be scalar_node, tensor_node or binary_expr
+</span></span></span><span style="display:flex;"><span><span style="color:#998;font-style:italic">// left is std::shared_ptr&lt;__left&gt; and right is std::shared_ptr&lt;__right&gt;
+</span></span></span><span style="display:flex;"><span><span style="color:#998;font-style:italic"></span><span style="color:#000;font-weight:bold">template</span> <span style="color:#000;font-weight:bold">&lt;</span><span style="color:#000;font-weight:bold">typename</span> __left, <span style="color:#000;font-weight:bold">typename</span> __right, <span style="color:#000;font-weight:bold">template</span> <span style="color:#000;font-weight:bold">&lt;</span><span style="color:#000;font-weight:bold">typename</span>...<span style="color:#000;font-weight:bold">&gt;</span> <span style="color:#000;font-weight:bold">class</span> <span style="color:#458;font-weight:bold">__func</span>,
+</span></span><span style="display:flex;"><span>          <span style="color:#000;font-weight:bold">typename</span>... __args<span style="color:#000;font-weight:bold">&gt;</span>
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">class</span> <span style="color:#458;font-weight:bold">binary_expr</span> <span style="color:#000;font-weight:bold">:</span> <span style="color:#000;font-weight:bold">::</span>ten<span style="color:#000;font-weight:bold">::</span>expr<span style="color:#000;font-weight:bold">&lt;</span>binary_expr<span style="color:#000;font-weight:bold">&lt;</span>__left, __right, __func, __args...<span style="color:#000;font-weight:bold">&gt;&gt;</span> {
+</span></span><span style="display:flex;"><span>...
+</span></span><span style="display:flex;"><span>};
+</span></span></code></pre></div><p>The binary expresion holds a shared pointer to a binary node.</p>
+<ol start="7">
+<li>Define useful aliases. Here a vector and a matrix. Other aliases like static tensor, static vector, static matrix and diagonal matrix are defined.</li>
+</ol>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#998;font-style:italic">// vector&lt;__t&gt;
+</span></span></span><span style="display:flex;"><span><span style="color:#998;font-style:italic"></span><span style="color:#000;font-weight:bold">template</span> <span style="color:#000;font-weight:bold">&lt;</span><span style="color:#000;font-weight:bold">class</span> <span style="color:#458;font-weight:bold">__t</span>, storage_order __order <span style="color:#000;font-weight:bold">=</span> default_order,
+</span></span><span style="display:flex;"><span>          <span style="color:#000;font-weight:bold">class</span> <span style="color:#458;font-weight:bold">__storage</span> <span style="color:#000;font-weight:bold">=</span> default_storage<span style="color:#000;font-weight:bold">&lt;</span>__t, shape<span style="color:#000;font-weight:bold">&lt;::</span>ten<span style="color:#000;font-weight:bold">::</span>dynamic<span style="color:#000;font-weight:bold">&gt;&gt;</span>,
+</span></span><span style="display:flex;"><span>          <span style="color:#000;font-weight:bold">class</span> <span style="color:#458;font-weight:bold">__allocator</span> <span style="color:#000;font-weight:bold">=</span> <span style="color:#000;font-weight:bold">typename</span> details<span style="color:#000;font-weight:bold">::</span>allocator_type<span style="color:#000;font-weight:bold">&lt;</span>__storage<span style="color:#000;font-weight:bold">&gt;::</span>type<span style="color:#000;font-weight:bold">&gt;</span>
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">using</span> vector <span style="color:#000;font-weight:bold">=</span>
+</span></span><span style="display:flex;"><span>    ranked_tensor<span style="color:#000;font-weight:bold">&lt;</span>__t, shape<span style="color:#000;font-weight:bold">&lt;::</span>ten<span style="color:#000;font-weight:bold">::</span>dynamic<span style="color:#000;font-weight:bold">&gt;</span>, __order, __storage, __allocator<span style="color:#000;font-weight:bold">&gt;</span>;
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#998;font-style:italic">// matrix&lt;__t&gt; or matrix&lt;__t, __shape&gt;
+</span></span></span><span style="display:flex;"><span><span style="color:#998;font-style:italic"></span><span style="color:#000;font-weight:bold">template</span> <span style="color:#000;font-weight:bold">&lt;</span><span style="color:#000;font-weight:bold">class</span> <span style="color:#458;font-weight:bold">__t</span>, <span style="color:#000;font-weight:bold">class</span> <span style="color:#458;font-weight:bold">__shape</span> <span style="color:#000;font-weight:bold">=</span> dynamic_shape<span style="color:#000;font-weight:bold">&lt;</span><span style="color:#099">2</span><span style="color:#000;font-weight:bold">&gt;</span>,
+</span></span><span style="display:flex;"><span>          storage_order __order <span style="color:#000;font-weight:bold">=</span> default_order,
+</span></span><span style="display:flex;"><span>          <span style="color:#000;font-weight:bold">class</span> <span style="color:#458;font-weight:bold">__storage</span> <span style="color:#000;font-weight:bold">=</span> default_storage<span style="color:#000;font-weight:bold">&lt;</span>__t, __shape<span style="color:#000;font-weight:bold">&gt;</span>,
+</span></span><span style="display:flex;"><span>          <span style="color:#000;font-weight:bold">class</span> <span style="color:#458;font-weight:bold">__allocator</span> <span style="color:#000;font-weight:bold">=</span> <span style="color:#000;font-weight:bold">typename</span> details<span style="color:#000;font-weight:bold">::</span>allocator_type<span style="color:#000;font-weight:bold">&lt;</span>__storage<span style="color:#000;font-weight:bold">&gt;::</span>type<span style="color:#000;font-weight:bold">&gt;</span>
+</span></span><span style="display:flex;"><span>   <span style="color:#000;font-weight:bold">requires</span>(__shape<span style="color:#000;font-weight:bold">::</span>rank() <span style="color:#000;font-weight:bold">==</span> <span style="color:#099">2</span>)
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">using</span> matrix <span style="color:#000;font-weight:bold">=</span> ranked_tensor<span style="color:#000;font-weight:bold">&lt;</span>__t, __shape, __order, __storage, __allocator<span style="color:#000;font-weight:bold">&gt;</span>;
+</span></span></code></pre></div><h3 id="simd">SIMD</h3>
+<p>The library support SIMD operations for addition, multiplication, substraction and division. By using SIMD instructions, it can process multiple data points in parallel, significantly speeding up computations. The simd backend implementation is available at <a href="https://github.com/istmarc/tenseur/blob/main/ten/kernels/binary_ops.hxx">Simd backend</a>.</p>
+<h3 id="blas">BLAS</h3>
+<p>The BLAS backend allow users to take advantages of highly optimized routines for vector and matrix operations that are tuned for various architectures. This is particularly benefical for large-scale matrix operations, where reference methods may perform very poorly. The blas backend implementations are available at <a href="https://github.com/istmarc/tenseur/blob/main/ten/kernels/blas_api.hxx">Blas API</a>.</p>
+<h3 id="allocator">Allocator</h3>
+<p>An allocator manages memory allocation and deallocation. Allocators are crucial for efficient memory management. They also help ensure that memory is used effectively and that ressources are freed when they are no longer necessary. Tenseur uses <code>std::allocator</code> under the hood for aligned memory allocation. it&rsquo;s implemented in the following link : <a href="https://github.com/istmarc/tenseur/blob/main/ten/storage/dense_storage.hxx">Dense storage</a>.</p>
+<h3 id="examples">Examples</h3>
+<ul>
+<li>Create a tensor with uninitialized memory</li>
+</ul>
+<pre tabindex="0"><code>tensor&lt;float, 3&gt; a({2, 3, 4});
+matrix&lt;float&gt; b({2, 3});
+vector&lt;float&gt; c({5});
+</code></pre><ul>
+<li>Create a tensor of zeros</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#000;font-weight:bold">auto</span> x <span style="color:#000;font-weight:bold">=</span> zeros<span style="color:#000;font-weight:bold">&lt;</span><span style="color:#458;font-weight:bold">float</span>, <span style="color:#099">3</span><span style="color:#000;font-weight:bold">&gt;</span>({<span style="color:#099">2</span>, <span style="color:#099">3</span>, <span style="color:#099">4</span>});
+</span></span></code></pre></div><ul>
+<li>Create a tensor filled with values</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#000;font-weight:bold">auto</span> x <span style="color:#000;font-weight:bold">=</span> fill<span style="color:#000;font-weight:bold">&lt;</span><span style="color:#458;font-weight:bold">float</span>, <span style="color:#099">2</span><span style="color:#000;font-weight:bold">&gt;</span>({<span style="color:#099">2</span>, <span style="color:#099">3</span>}, <span style="color:#099">0.1</span>);
+</span></span></code></pre></div><ul>
+<li>Reshape a matrix</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#000;font-weight:bold">auto</span> x <span style="color:#000;font-weight:bold">=</span> range<span style="color:#000;font-weight:bold">&lt;</span>matrix<span style="color:#000;font-weight:bold">&lt;</span><span style="color:#458;font-weight:bold">float</span><span style="color:#000;font-weight:bold">&gt;&gt;</span>({<span style="color:#099">2</span>, <span style="color:#099">3</span>});
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">auto</span> y <span style="color:#000;font-weight:bold">=</span> reshape<span style="color:#000;font-weight:bold">&lt;</span><span style="color:#099">2</span><span style="color:#000;font-weight:bold">&gt;</span>(x, {<span style="color:#099">3</span>, <span style="color:#099">2</span>});
+</span></span><span style="display:flex;"><span><span style="color:#998;font-style:italic">// y is an expression, it can be evaluated
+</span></span></span><span style="display:flex;"><span><span style="color:#998;font-style:italic"></span><span style="color:#000;font-weight:bold">auto</span> z <span style="color:#000;font-weight:bold">=</span> y.eval();
+</span></span></code></pre></div><ul>
+<li>Flatten a tensor</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#000;font-weight:bold">auto</span> x <span style="color:#000;font-weight:bold">=</span> range<span style="color:#000;font-weight:bold">&lt;</span>tensor<span style="color:#000;font-weight:bold">&lt;</span><span style="color:#458;font-weight:bold">float</span>, <span style="color:#099">3</span><span style="color:#000;font-weight:bold">&gt;&gt;</span>({<span style="color:#099">2</span>, <span style="color:#099">3</span>, <span style="color:#099">4</span>});
+</span></span><span style="display:flex;"><span>vector<span style="color:#000;font-weight:bold">&lt;</span><span style="color:#458;font-weight:bold">float</span><span style="color:#000;font-weight:bold">&gt;</span> b <span style="color:#000;font-weight:bold">=</span> flatten(a);
+</span></span></code></pre></div><ul>
+<li>Random numbers generation</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>size_t seed <span style="color:#000;font-weight:bold">=</span> <span style="color:#099">1234</span>;
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">auto</span> x <span style="color:#000;font-weight:bold">=</span> rand<span style="color:#000;font-weight:bold">&lt;</span>smatrix<span style="color:#000;font-weight:bold">&lt;</span><span style="color:#458;font-weight:bold">float</span>, <span style="color:#099">2</span>, <span style="color:#099">3</span><span style="color:#000;font-weight:bold">&gt;&gt;</span>(seed);
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">auto</span> y <span style="color:#000;font-weight:bold">=</span> rand<span style="color:#000;font-weight:bold">&lt;</span>matrix<span style="color:#000;font-weight:bold">&lt;</span><span style="color:#458;font-weight:bold">float</span><span style="color:#000;font-weight:bold">&gt;&gt;</span>({<span style="color:#099">2</span>, <span style="color:#099">3</span>}, seed);
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">auto</span> z <span style="color:#000;font-weight:bold">=</span> rand<span style="color:#000;font-weight:bold">&lt;</span><span style="color:#458;font-weight:bold">float</span>, <span style="color:#099">3</span><span style="color:#000;font-weight:bold">&gt;</span>({<span style="color:#099">2</span>, <span style="color:#099">3</span>, <span style="color:#099">4</span>}, seed);
+</span></span></code></pre></div><ul>
+<li>col major and row major tensors</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span>tensor<span style="color:#000;font-weight:bold">&lt;</span><span style="color:#458;font-weight:bold">float</span>, <span style="color:#099">3</span>, storage_order<span style="color:#000;font-weight:bold">::</span>col_major<span style="color:#000;font-weight:bold">&gt;</span> x({<span style="color:#099">2</span>, <span style="color:#099">3</span>, <span style="color:#099">4</span>});
+</span></span><span style="display:flex;"><span>cout <span style="color:#000;font-weight:bold">&lt;&lt;</span> <span style="color:#d14">&#34;shape = &#34;</span> <span style="color:#000;font-weight:bold">&lt;&lt;</span> x.shape() <span style="color:#000;font-weight:bold">&lt;&lt;</span> endl;
+</span></span><span style="display:flex;"><span>cout <span style="color:#000;font-weight:bold">&lt;&lt;</span> <span style="color:#d14">&#34;strides = &#34;</span> <span style="color:#000;font-weight:bold">&lt;&lt;</span> x.strides() <span style="color:#000;font-weight:bold">&lt;&lt;</span> endl;
+</span></span><span style="display:flex;"><span>tensor<span style="color:#000;font-weight:bold">&lt;</span><span style="color:#458;font-weight:bold">float</span>, <span style="color:#099">3</span>, storage_order<span style="color:#000;font-weight:bold">::</span>row_major<span style="color:#000;font-weight:bold">&gt;</span> y({<span style="color:#099">2</span>, <span style="color:#099">3</span>, <span style="color:#099">4</span>});
+</span></span><span style="display:flex;"><span>cout <span style="color:#000;font-weight:bold">&lt;&lt;</span> <span style="color:#d14">&#34;shape = &#34;</span> <span style="color:#000;font-weight:bold">&lt;&lt;</span> y.shape() <span style="color:#000;font-weight:bold">&lt;&lt;</span> endl;
+</span></span><span style="display:flex;"><span>cout <span style="color:#000;font-weight:bold">&lt;&lt;</span> <span style="color:#d14">&#34;strides = &#34;</span> <span style="color:#000;font-weight:bold">&lt;&lt;</span> y.strides() <span style="color:#000;font-weight:bold">&lt;&lt;</span> endl;
+</span></span></code></pre></div><ul>
+<li>Matrix multiplication</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-cpp" data-lang="cpp"><span style="display:flex;"><span><span style="color:#000;font-weight:bold">auto</span> a <span style="color:#000;font-weight:bold">=</span> range<span style="color:#000;font-weight:bold">&lt;</span>matrix<span style="color:#000;font-weight:bold">&lt;</span><span style="color:#458;font-weight:bold">float</span><span style="color:#000;font-weight:bold">&gt;&gt;</span>({<span style="color:#099">2</span>, <span style="color:#099">3</span>});
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">auto</span> b <span style="color:#000;font-weight:bold">=</span> range<span style="color:#000;font-weight:bold">&lt;</span>matrix<span style="color:#000;font-weight:bold">&lt;</span><span style="color:#458;font-weight:bold">float</span><span style="color:#000;font-weight:bold">&gt;&gt;</span>({<span style="color:#099">3</span>, <span style="color:#099">4</span>});
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">auto</span> c <span style="color:#000;font-weight:bold">=</span> (a <span style="color:#000;font-weight:bold">*</span> b).eval();
+</span></span></code></pre></div><ul>
+<li>Chaining expressions</li>
+</ul>
+<pre tabindex="0"><code>auto a = range&lt;vector&lt;float&gt;&gt;(5);
+auto b = 2. * a;
+auto c = sqrt(b);
+auto d = (c + a).eval();
+</code></pre><h3 id="performance">Performance</h3>
+<p>The library is optimized for vector and matrix operations providing excellent performance in many cases. Here are some benchmarks against <a href="https://eigen.tuxfamily.org/index.php?title=Main_Page">Eigen</a>:</p>
+<ul>
+<li>Generalized matrix multiplication</li>
+</ul>
+<p><img src="gemm.png" alt="Gemm"></p>
+<ul>
+<li>Vector addition</li>
+</ul>
+<p><img src="sum.png" alt="Sum"></p>
+<ul>
+<li>Vector substraction</li>
+</ul>
+<p><img src="sub.png" alt="Sub"></p>
+<ul>
+<li>Elementwise vector division</li>
+</ul>
+<p><img src="div.png" alt="Div"></p>
+<ul>
+<li>Elementwise vector multiplication</li>
+</ul>
+<p><img src="mult_elementwise.png" alt="Mult"></p>
+<h3 id="future-plans">Future plans</h3>
+<p>The library is currently under active development. With its combination of lazy evaluation, template expressions, and advanced BLAS and SIMD backends, it stands to make a significant impact on the landscape of numerical linear algebra in C++. Some of the future plans are:</p>
+<ul>
+<li>Compile to a shared library</li>
+<li>Generate automatic python bindings</li>
+<li>Pythonizations</li>
+<li>Sparse tensors</li>
+<li>More special matrices</li>
+<li>Automatic differentiation</li>
+<li>Documentation</li>
+</ul>
+<h3 id="references">References</h3>
+<ul>
+<li><a href="https://en.wikipedia.org/wiki/Expression_templates">Expression templates</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Lazy_evaluation">Lazy evaluation</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Template_metaprogramming">Template metaprogramming</a></li>
+<li><a href="https://en.cppreference.com/w/cpp/language/sfinae">SFINAE C++</a></li>
+<li><a href="https://en.cppreference.com/w/cpp/language/constraints">Constraints and concepts</a></li>
+</ul>
+
+</main>
+
+  <footer>
+  <script defer src="//yihui.org/js/math-code.js"></script>
+<script defer src="//mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+
+<script defer src="//yihui.org/js/center-img.js"></script>
+
+  
+  <hr/>
+  © <a href="https://istmarc.github.io">Marc</a> 2024 &ndash; 2024 | <a href="https://github.com/istmarc">Github</a>
+  
+  </footer>
+  </body>
+</html>
+
