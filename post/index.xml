@@ -13,7 +13,7 @@
       <pubDate>Sun, 27 Oct 2024 00:00:00 +0000</pubDate>
       
       <guid>/post/2024/10/27/on-designing-tenseur-a-c-tensor-library-with-lazy-evaluation/</guid>
-      <description>Tenseur is a header only c++ numerical library. It&amp;rsquo;s designed to provide high-performance linear algebra and multilinear algebra operations by laveraging the capabilities of BLAS (Basic Linear Algebra Subprograms) and SIMD (Single Instruction, Multiple Data) backends. This library, currently in development, aims to offer a robust framework for numerical computations focusing on both performance and easy of use. In this blog post, we will first describe some design decisions. Then we will show some of its features and advantages over other libraries.</description>
+      <description>Tenseur is a header only c++ numerical library. It&amp;rsquo;s designed to provide high-performance linear algebra and multilinear algebra operations by laveraging the capabilities of BLAS (Basic Linear Algebra Subprograms) and SIMD (Single Instruction, Multiple Data) backends. This library, currently in development, aims to offer a robust framework for numerical computations focusing on both performance and easy of use. The code is available on Github. In this blog post, we will first describe some design decisions.</description>
     </item>
     
     <item>
