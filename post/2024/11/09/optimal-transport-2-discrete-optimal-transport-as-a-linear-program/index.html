@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Optimal transport 2: Discrete optimal transport as a linear program | Marc&#39;s website</title>
+    <link rel="stylesheet" href="/css/style.css" />
+    <link rel="stylesheet" href="/css/fonts.css" />
+    
+  </head>
+
+  <body>
+    <nav>
+    <ul class="menu">
+      
+      <li><a href="/">Home</a></li>
+      
+      <li><a href="/about/">About</a></li>
+      
+      <li><a href="/categories/">Categories</a></li>
+      
+      <li><a href="/tags/">Tags</a></li>
+      
+      <li><a href="/post/">Blog</a></li>
+      
+      <li><a href="/index.xml">Subscribe</a></li>
+      
+    </ul>
+    <hr/>
+    </nav>
+
+<div class="article-meta">
+<h1><span class="title">Optimal transport 2: Discrete optimal transport as a linear program</span></h1>
+<h2 class="author">Marc</h2>
+<h2 class="date">2024/11/09</h2>
+</div>
+
+<main>
+<p>Discrete optimal transport addresses the problem of redistributing mass between discrete distributions. In this blog, we will show how the discrete optimal transport problem can be reduced to a linear program. Then we will show how to solve the linear programming problem practically.</p>
+<h3 id="discrete-probability-measures">Discrete probability measures</h3>
+<p>Let \(X\) and \(Y\) be two discrete measures in the probability spaces \((\Omega_{X}, F_{X}, \mu)\) and \((\Omega_{Y}, F_{Y}, \nu)\).</p>
+<p><font color="blue">$$\mu(x) = \sum_{z \in \Omega_{X}} \mu(z) I_{x}(z)$$
+</font></p>
+<p>The measure of the set \(x\) is the sum of the measures of all the \(z \in \Omega_{X}\) such that \(z \in x\).</p>
+<p>similarly</p>
+<p><font color="blue">$$\nu(y) = \sum_{z \in \Omega_{Y}} \nu(z) I_{y}(z)$$</font></p>
+<p>with</p>
+<p><font color="blue">$$\sum_{x \in \Omega_{X}} \mu(x) = 1$$</font></p>
+<p>and</p>
+<p><font color="blue">$$\sum_{y \in \Omega_{Y}} \nu(y) = 1$$</font></p>
+<h3 id="optimal-transport-for-discrete-distributions">Optimal transport for discrete distributions</h3>
+<p>the optimal transport problem for discrete distributions is</p>
+<font color="blue">
+$$
+\begin{align}
+\text{min} \big\{ \sum_{X\text{x}Y}c_{T}(x,y) \gamma(x,y) : \gamma(x,y) \in \Gamma(x,y) \big\}
+\end{align}
+$$
+</font>
+<p>If \(X\) is defined in \(\Omega_{X} = [1, 2, \ldots N]\) and \(Y\) is defined in \(\Omega_{Y} = [1,2, \ldots, M]\). We note \(\mu_i\) the mass of \(i\) in \((\Omega_{X}, F_{X}, \mu)\) and \(\nu_{i}\) the mass of \(i\) in \((\Omega_{Y}, F_{Y}, \nu)\).</p>
+<p>The optimal transport problem from \(X\) to \(Y\) is</p>
+<p>$$
+\begin{align}
+\text{min} { \sum_{1 \leq i \leq n, 1 \leq j \leq m}c_{i, j} \gamma_{i,j} : \gamma \in \Gamma(X,Y) }
+\end{align}
+$$</p>
+<p>This can be rewritten as</p>
+<p>$$
+\begin{align}
+\text{min} { \sum_{1 \leq i \leq n, 1 \leq j \leq m}(C \circ \gamma)_{i,j} }
+\end{align}
+$$</p>
+<p>where \(\circ\) is the hadamard product.</p>
+<p>Let note vec the operation of vectorizing a matrix by stacking its row vectors.
+If vec\((C)\) is the vectorization of \(C\) and vec\((\gamma)\) is the vectorization of \(\gamma\) then we have</p>
+<p>$$
+\begin{align}
+\text{min} { &lt; \text{vec}(C), \text{vec}(\gamma)&gt; : \Sigma_{j=1}^{n}\gamma_{i,j} = \mu_{i}\text{, and } \Sigma_{i=1}^{n}\gamma_{i,j} = \nu_{j} }
+\end{align}
+$$</p>
+<p>where \(&lt;,&gt;\) is the dot product.</p>
+<p>let \(z\) = vec\((\gamma)\) and \(c\) = vec\((C)\)</p>
+<p>$$
+\begin{align}
+\text{min} { &lt;c, z&gt; : \Sigma_{j=1}^{m}\gamma_{i,j} = \mu_{i}\text{, and } \Sigma_{i=1}^{n}\gamma_{i,j} = \nu_{j} }
+\end{align}
+$$</p>
+<p>$$
+\begin{array}{ccc}
+(I_{M} \otimes 1_{1\text{x}N})z &amp; = &amp;
+\left[\begin{array}{c c c c c}
+[1 \ldots 1] &amp; &amp;              &amp; &amp; &amp; \\
+&amp; \ddots              &amp; &amp; &amp; \\
+&amp; &amp; [1 \ldots 1] &amp; &amp; &amp; \\
+&amp; &amp;              &amp; \ddots &amp; \\
+&amp; &amp;              &amp; &amp; [1 \ldots 1] \\
+\end{array}\right]
+\\
+&amp; = &amp;
+\left[\begin{array}{c}
+z_{1,1} \\
+\vdots  \\
+z_{1,N} \\
+\vdots  \\
+z_{i,1} \\
+\vdots  \\
+z_{i,N} \\
+\vdots  \\
+z_{M,1} \\
+\vdots  \\
+z_{M,N} \\
+\end{array}\right]
+\\
+&amp; = &amp;
+\left[\begin{array}{c}
+\Sigma_{j=1}^{N}z_{1,j}\\
+\vdots \\
+\Sigma_{j=1}^{N}z_{i,j}\\
+\vdots \\
+\Sigma_{j=1}^{N}z_{M,j}\\
+\end{array}\right]\\
+&amp; = &amp; \mu \\
+\end{array}
+$$</p>
+<p>where \(\otimes\) is the kronecker product, and</p>
+<p>$$
+\begin{array}{ccc}
+(1_{1\text{x}M} \otimes I_{N})z &amp; = &amp;
+\left[\begin{array}{c c c c c}
+\left[\begin{array}{ccc}
+1 &amp;        &amp;  \\
+&amp; \ddots &amp; \\
+&amp;        &amp; 1\\
+\end{array}\right]
+&amp; \cdots &amp;
+\left[\begin{array}{ccc}
+1 &amp;        &amp;  \\
+&amp; \ddots &amp; \\
+&amp;        &amp; 1\\
+\end{array}\right]
+&amp; \cdots &amp;
+\left[\begin{array}{ccc}
+1 &amp;        &amp;  \\
+&amp; \ddots &amp; \\
+&amp;        &amp; 1\\
+\end{array}\right]
+\end{array}\right]\\
+&amp; = &amp;
+\left[\begin{array}{c}
+z_{1,1} \\
+\vdots  \\
+z_{1,N} \\
+\vdots  \\
+z_{i,1} \\
+\vdots  \\
+z_{i,N} \\
+\vdots  \\
+z_{M,1} \\
+\vdots  \\
+z_{M,N} \\
+\end{array}\right]\\
+&amp; = &amp;
+\left[\begin{array}{c}
+\Sigma_{i=1}^{N}z_{i,1}\\
+\vdots \\
+\Sigma_{i=1}^{N}z_{i,j}\\
+\vdots \\
+\Sigma_{i=1}^{N}z_{i,M}\\
+\end{array}\right]\\
+&amp; = &amp; \nu \\
+\end{array}
+$$</p>
+<p>So we have</p>
+<p>$$(I_{M} \otimes 1_{1\text{x}N})z = \mu$$</p>
+<p>and</p>
+<p>$$(1_{1\text{x}M} \otimes I_{N})z = \nu$$</p>
+<p>In matrix form, we have
+$$
+\begin{array}{ccc}
+\left[
+\begin{array}{c}
+I_{m} \otimes 1_{1\text{x}n}\
+1_{1\text{x}m} \otimes I_{n}
+\end{array}
+\right]
+z
+&amp; = &amp;
+\left[
+\begin{array}{c}
+\mu\
+\nu
+\end{array}
+\right]
+\end{array}
+$$</p>
+<p>Let&rsquo;s note \(A = \left[
+\begin{array}{c}
+I_{m} \otimes 1_{1\text{x}n}\
+1_{1\text{x}m} \otimes I_{n}
+\end{array}
+\right]\)
+and \(b=\left[\begin{array}{c}\mu \\ \nu \end{array}\right]\)</p>
+<p>The equation above becomes \(Az=b\)</p>
+<p>Thereforce the following optimal transport problem
+$$
+\begin{align}
+\text{min} { &lt;c, z&gt; : z \geq 0, Az = b}
+\end{align}
+$$</p>
+<p>can be reduced to a linear program
+<font color="blue">
+$$
+\begin{align}
+\text{min} { &lt;c, z&gt; : z \geq 0, Az \leq b}
+\end{align}
+$$
+</font></p>
+<h3 id="libraries-to-import">Libraries to import</h3>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#000;font-weight:bold">import</span> <span style="color:#555">numpy</span> <span style="color:#000;font-weight:bold">as</span> <span style="color:#555">np</span>
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">from</span> <span style="color:#555">scipy</span> <span style="color:#000;font-weight:bold">import</span> stats
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">import</span> <span style="color:#555">matplotlib.pyplot</span> <span style="color:#000;font-weight:bold">as</span> <span style="color:#555">plt</span>
+</span></span><span style="display:flex;"><span>plt<span style="color:#000;font-weight:bold">.</span>rcParams[<span style="color:#d14">&#39;text.usetex&#39;</span>] <span style="color:#000;font-weight:bold">=</span> <span style="color:#000;font-weight:bold">True</span>
+</span></span><span style="display:flex;"><span>plt<span style="color:#000;font-weight:bold">.</span>style<span style="color:#000;font-weight:bold">.</span>use(<span style="color:#d14">&#34;science&#34;</span>)
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">import</span> <span style="color:#555">cvxpy</span> <span style="color:#000;font-weight:bold">as</span> <span style="color:#555">cp</span>
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">import</span> <span style="color:#555">math</span>
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">import</span> <span style="color:#555">matplotlib</span>
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">from</span> <span style="color:#555">matplotlib.gridspec</span> <span style="color:#000;font-weight:bold">import</span> GridSpec
+</span></span></code></pre></div><h3 id="generate-a-problem">Generate a problem</h3>
+<p>Let&rsquo;s generate two random gaussian distributions.</p>
+<p><strong>Generate n samples from \(N(0,1)\)</strong></p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>n <span style="color:#000;font-weight:bold">=</span> <span style="color:#099">1000</span>
+</span></span><span style="display:flex;"><span>x <span style="color:#000;font-weight:bold">=</span> np<span style="color:#000;font-weight:bold">.</span>random<span style="color:#000;font-weight:bold">.</span>randn(n)
+</span></span><span style="display:flex;"><span>x<span style="color:#000;font-weight:bold">.</span>sort()
+</span></span><span style="display:flex;"><span>fx <span style="color:#000;font-weight:bold">=</span> stats<span style="color:#000;font-weight:bold">.</span>norm<span style="color:#000;font-weight:bold">.</span>pdf(x)
+</span></span></code></pre></div><p><strong>Generate m samples from \(N(0, \sqrt(2))\)</strong></p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>m <span style="color:#000;font-weight:bold">=</span> <span style="color:#099">1000</span>
+</span></span><span style="display:flex;"><span>y <span style="color:#000;font-weight:bold">=</span> <span style="color:#099">2.</span> <span style="color:#000;font-weight:bold">*</span> np<span style="color:#000;font-weight:bold">.</span>random<span style="color:#000;font-weight:bold">.</span>randn(m)
+</span></span><span style="display:flex;"><span>y<span style="color:#000;font-weight:bold">.</span>sort()
+</span></span><span style="display:flex;"><span>fy <span style="color:#000;font-weight:bold">=</span> stats<span style="color:#000;font-weight:bold">.</span>norm<span style="color:#000;font-weight:bold">.</span>pdf(y, <span style="color:#099">0.</span>, <span style="color:#099">2.</span>)
+</span></span></code></pre></div><p><strong>Distributions of \(X\) and \(Y\)</strong></p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">plot_dist</span>(x, fx, y, fy):
+</span></span><span style="display:flex;"><span>    fig, axis <span style="color:#000;font-weight:bold">=</span> plt<span style="color:#000;font-weight:bold">.</span>subplots()
+</span></span><span style="display:flex;"><span>    axis<span style="color:#000;font-weight:bold">.</span>plot(x, fx, color <span style="color:#000;font-weight:bold">=</span> <span style="color:#d14">&#34;darkblue&#34;</span>, label <span style="color:#000;font-weight:bold">=</span> <span style="color:#d14">&#34;$x$&#34;</span>)
+</span></span><span style="display:flex;"><span>    axis<span style="color:#000;font-weight:bold">.</span>plot(y, fy, color <span style="color:#000;font-weight:bold">=</span> <span style="color:#d14">&#34;maroon&#34;</span>, label <span style="color:#000;font-weight:bold">=</span> <span style="color:#d14">&#34;$y$&#34;</span>)
+</span></span><span style="display:flex;"><span>    plt<span style="color:#000;font-weight:bold">.</span>legend()
+</span></span><span style="display:flex;"><span>    plt<span style="color:#000;font-weight:bold">.</span>show()
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>plot_dist(x, fx, y, fy)
+</span></span></code></pre></div><p><img src="output_26_0.png" alt="png"></p>
+<p><strong>Discretize \(x \sim X\) and \(y \sim Y\)</strong></p>
+<p>Let&rsquo;s discretisize the generated distributions.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#998;font-style:italic"># Discretize x using the histogram</span>
+</span></span><span style="display:flex;"><span><span style="color:#998;font-style:italic"># returns the normalized histogram and the lower limits of the intervals</span>
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">discretize</span>(x, nbins, normalize <span style="color:#000;font-weight:bold">=</span> <span style="color:#000;font-weight:bold">True</span>):
+</span></span><span style="display:flex;"><span>    freq, inter <span style="color:#000;font-weight:bold">=</span> np<span style="color:#000;font-weight:bold">.</span>histogram(x, nbins)
+</span></span><span style="display:flex;"><span>    inter <span style="color:#000;font-weight:bold">=</span> inter[:<span style="color:#000;font-weight:bold">-</span><span style="color:#099">1</span>]
+</span></span><span style="display:flex;"><span>    freq <span style="color:#000;font-weight:bold">=</span> freq<span style="color:#000;font-weight:bold">.</span>astype(np<span style="color:#000;font-weight:bold">.</span>float32)
+</span></span><span style="display:flex;"><span>    width <span style="color:#000;font-weight:bold">=</span> inter[<span style="color:#099">1</span>] <span style="color:#000;font-weight:bold">-</span> inter[<span style="color:#099">0</span>]
+</span></span><span style="display:flex;"><span>    n <span style="color:#000;font-weight:bold">=</span> x<span style="color:#000;font-weight:bold">.</span>size
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">if</span> normalize:
+</span></span><span style="display:flex;"><span>        freq <span style="color:#000;font-weight:bold">/=</span> (width <span style="color:#000;font-weight:bold">*</span> n)
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">return</span> freq, inter
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>N <span style="color:#000;font-weight:bold">=</span> <span style="color:#099">20</span>
+</span></span><span style="display:flex;"><span>M <span style="color:#000;font-weight:bold">=</span> <span style="color:#099">20</span>
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>freq_x, inter_x <span style="color:#000;font-weight:bold">=</span> discretize(x, N)
+</span></span><span style="display:flex;"><span>plt<span style="color:#000;font-weight:bold">.</span>bar(inter_x, freq_x, color <span style="color:#000;font-weight:bold">=</span> <span style="color:#d14">&#34;silver&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#000;font-weight:bold">.</span>plot(x, fx, color <span style="color:#000;font-weight:bold">=</span> <span style="color:#d14">&#34;darkblue&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#000;font-weight:bold">.</span>show()
+</span></span></code></pre></div><p><img src="output_30_0.png" alt="png"></p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>freq_y, inter_y <span style="color:#000;font-weight:bold">=</span> discretize(y, M)
+</span></span><span style="display:flex;"><span>plt<span style="color:#000;font-weight:bold">.</span>bar(inter_y, freq_y, color <span style="color:#000;font-weight:bold">=</span> <span style="color:#d14">&#34;silver&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#000;font-weight:bold">.</span>plot(y, fy, color <span style="color:#000;font-weight:bold">=</span> <span style="color:#d14">&#34;maroon&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#000;font-weight:bold">.</span>show()
+</span></span></code></pre></div><p><img src="output_31_0.png" alt="png"></p>
+<p><strong>Distributions of \(X\) and \(Y\)</strong></p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>plt<span style="color:#000;font-weight:bold">.</span>bar(inter_x, freq_x, color <span style="color:#000;font-weight:bold">=</span> <span style="color:#d14">&#34;darkblue&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#000;font-weight:bold">.</span>bar(inter_y, freq_y, color <span style="color:#000;font-weight:bold">=</span> <span style="color:#d14">&#34;maroon&#34;</span>, alpha <span style="color:#000;font-weight:bold">=</span> <span style="color:#099">0.5</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#000;font-weight:bold">.</span>show()
+</span></span></code></pre></div><p><img src="output_33_0.png" alt="png"></p>
+<h3 id="solving-the-ot-problem">Solving the OT problem</h3>
+<p>The linear program for optimal transport involves defining the linear objective function, and the constraints.</p>
+<p>Let \(\mu\) be the distribution (histogram) of \(X\) and \(\nu\) be the distribution (histogram) of \(Y\)</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>mu <span style="color:#000;font-weight:bold">=</span> freq_x
+</span></span><span style="display:flex;"><span>nu <span style="color:#000;font-weight:bold">=</span> freq_y
+</span></span></code></pre></div><p><strong>Forming the matrix b</strong></p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>b <span style="color:#000;font-weight:bold">=</span> np<span style="color:#000;font-weight:bold">.</span>concatenate((nu, mu))
+</span></span><span style="display:flex;"><span>b<span style="color:#000;font-weight:bold">.</span>shape
+</span></span></code></pre></div><pre><code>(40,)
+</code></pre>
+<p><strong>Forming the matrix A</strong></p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>Amu <span style="color:#000;font-weight:bold">=</span> np<span style="color:#000;font-weight:bold">.</span>kron(np<span style="color:#000;font-weight:bold">.</span>identity(M), np<span style="color:#000;font-weight:bold">.</span>ones(N))
+</span></span><span style="display:flex;"><span>Amu<span style="color:#000;font-weight:bold">.</span>shape
+</span></span></code></pre></div><pre><code>(20, 400)
+</code></pre>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>Anu <span style="color:#000;font-weight:bold">=</span> np<span style="color:#000;font-weight:bold">.</span>kron(np<span style="color:#000;font-weight:bold">.</span>ones(M), np<span style="color:#000;font-weight:bold">.</span>identity(N))
+</span></span><span style="display:flex;"><span>Anu<span style="color:#000;font-weight:bold">.</span>shape
+</span></span></code></pre></div><pre><code>(20, 400)
+</code></pre>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>A <span style="color:#000;font-weight:bold">=</span> np<span style="color:#000;font-weight:bold">.</span>concatenate((Amu, Anu), <span style="color:#099">0</span>)
+</span></span><span style="display:flex;"><span>A<span style="color:#000;font-weight:bold">.</span>shape
+</span></span></code></pre></div><pre><code>(40, 400)
+</code></pre>
+<p><strong>Solving the linear programming problem using CVXPY</strong></p>
+<p>The variable z is the vectorized transportation matrix \(\gamma\).</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>z <span style="color:#000;font-weight:bold">=</span> cp<span style="color:#000;font-weight:bold">.</span>Variable(M <span style="color:#000;font-weight:bold">*</span> N)
+</span></span></code></pre></div><p>The loss function is the mean squared error</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>obj <span style="color:#000;font-weight:bold">=</span> cp<span style="color:#000;font-weight:bold">.</span>Minimize(cp<span style="color:#000;font-weight:bold">.</span>sum_squares(A <span style="color:#000;font-weight:bold">@</span> z <span style="color:#000;font-weight:bold">-</span> b))
+</span></span></code></pre></div><p>\(z\) is the vectorized coupling of \(\mu\) and \(\nu\) must be positive.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>constraints <span style="color:#000;font-weight:bold">=</span> [z <span style="color:#000;font-weight:bold">&gt;=</span> <span style="color:#099">0</span>]
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>problem <span style="color:#000;font-weight:bold">=</span> cp<span style="color:#000;font-weight:bold">.</span>Problem(obj, constraints)
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>res <span style="color:#000;font-weight:bold">=</span> problem<span style="color:#000;font-weight:bold">.</span>solve()
+</span></span></code></pre></div><p>The minimum risk (mean squared error) is</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>res
+</span></span></code></pre></div><pre><code>0.047973478298571876
+</code></pre>
+<p>Let&rsquo;s reshape z back to a matrix of size M x N</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>Z <span style="color:#000;font-weight:bold">=</span> z<span style="color:#000;font-weight:bold">.</span>value<span style="color:#000;font-weight:bold">.</span>reshape(M, N)
+</span></span></code></pre></div><p>the map of \(\mu\) by the transportation map \(T\) is \(T(\mu) = \sum_{j} \gamma_{ij}\). It should be as close as possible to the target distribution \(\nu\).</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>tmu <span style="color:#000;font-weight:bold">=</span> Z<span style="color:#000;font-weight:bold">.</span>sum(<span style="color:#099">1</span>)
+</span></span><span style="display:flex;"><span>tmu<span style="color:#000;font-weight:bold">.</span>shape
+</span></span></code></pre></div><pre><code>(20,)
+</code></pre>
+<h2 id="visual-checking">Visual checking</h2>
+<p>The optimal transport map between \(\mu\) and \(\nu\)</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">plot_map</span>(filename <span style="color:#000;font-weight:bold">=</span> <span style="color:#d14">&#34;&#34;</span>):
+</span></span><span style="display:flex;"><span>    fig <span style="color:#000;font-weight:bold">=</span> plt<span style="color:#000;font-weight:bold">.</span>figure(figsize<span style="color:#000;font-weight:bold">=</span>(<span style="color:#099">4</span>, <span style="color:#099">4</span>))
+</span></span><span style="display:flex;"><span>    gs <span style="color:#000;font-weight:bold">=</span> GridSpec(<span style="color:#099">2</span>, <span style="color:#099">2</span>, width_ratios<span style="color:#000;font-weight:bold">=</span>[<span style="color:#099">1</span>, <span style="color:#099">4</span>], height_ratios<span style="color:#000;font-weight:bold">=</span>[<span style="color:#099">1</span>, <span style="color:#099">4</span>])
+</span></span><span style="display:flex;"><span>    ax1 <span style="color:#000;font-weight:bold">=</span> plt<span style="color:#000;font-weight:bold">.</span>subplot(gs[<span style="color:#099">1</span>])
+</span></span><span style="display:flex;"><span>    ax1<span style="color:#000;font-weight:bold">.</span>bar(<span style="color:#0086b3">range</span>(M), nu, color <span style="color:#000;font-weight:bold">=</span> <span style="color:#d14">&#34;maroon&#34;</span>)
+</span></span><span style="display:flex;"><span>    ax1<span style="color:#000;font-weight:bold">.</span>axis(<span style="color:#d14">&#34;off&#34;</span>)
+</span></span><span style="display:flex;"><span>    ax2 <span style="color:#000;font-weight:bold">=</span> plt<span style="color:#000;font-weight:bold">.</span>subplot(gs[<span style="color:#099">2</span>])
+</span></span><span style="display:flex;"><span>    ax2<span style="color:#000;font-weight:bold">.</span>barh(<span style="color:#0086b3">range</span>(N), mu, color <span style="color:#000;font-weight:bold">=</span> <span style="color:#d14">&#34;darkblue&#34;</span>)
+</span></span><span style="display:flex;"><span>    ax2<span style="color:#000;font-weight:bold">.</span>invert_xaxis()
+</span></span><span style="display:flex;"><span>    ax2<span style="color:#000;font-weight:bold">.</span>axis(<span style="color:#d14">&#34;off&#34;</span>)
+</span></span><span style="display:flex;"><span>    ax3 <span style="color:#000;font-weight:bold">=</span> plt<span style="color:#000;font-weight:bold">.</span>subplot(gs[<span style="color:#099">3</span>])
+</span></span><span style="display:flex;"><span>    ax3<span style="color:#000;font-weight:bold">.</span>imshow(Z<span style="color:#000;font-weight:bold">.</span>transpose())
+</span></span><span style="display:flex;"><span>    ax3<span style="color:#000;font-weight:bold">.</span>axis(<span style="color:#d14">&#34;off&#34;</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">if</span> filename <span style="color:#000;font-weight:bold">!=</span> <span style="color:#d14">&#34;&#34;</span>:
+</span></span><span style="display:flex;"><span>        plt<span style="color:#000;font-weight:bold">.</span>savefig(filename)
+</span></span><span style="display:flex;"><span>    ax1<span style="color:#000;font-weight:bold">.</span>set_title(<span style="color:#d14">&#34;Joint and marginal histograms&#34;</span>)
+</span></span><span style="display:flex;"><span>    plt<span style="color:#000;font-weight:bold">.</span>show()
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>plot_map(<span style="color:#d14">&#34;../_figures/linear_program&#34;</span>)
+</span></span></code></pre></div><p><img src="output_61_0.png" alt="png"></p>
+<p>The target distribution \(\nu\) and the optimal transport map of \(\mu\)</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>plt<span style="color:#000;font-weight:bold">.</span>bar(<span style="color:#0086b3">range</span>(M), nu, color <span style="color:#000;font-weight:bold">=</span> <span style="color:#d14">&#34;maroon&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#000;font-weight:bold">.</span>bar(<span style="color:#0086b3">range</span>(M), tmu, color <span style="color:#000;font-weight:bold">=</span> <span style="color:#d14">&#34;grey&#34;</span>, alpha <span style="color:#000;font-weight:bold">=</span> <span style="color:#099">0.5</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#000;font-weight:bold">.</span>show()
+</span></span></code></pre></div><p><img src="output_63_0.png" alt="png"></p>
+<p>\(T(\mu)\) and \(\nu\) have the same shape. Let&rsquo;s draw them side by side.</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>fig, axes <span style="color:#000;font-weight:bold">=</span> plt<span style="color:#000;font-weight:bold">.</span>subplots(<span style="color:#099">1</span>, <span style="color:#099">2</span>, figsize <span style="color:#000;font-weight:bold">=</span> (<span style="color:#099">6</span>, <span style="color:#099">3</span>))
+</span></span><span style="display:flex;"><span>axes[<span style="color:#099">0</span>]<span style="color:#000;font-weight:bold">.</span>bar(<span style="color:#0086b3">range</span>(M), nu, color <span style="color:#000;font-weight:bold">=</span> <span style="color:#d14">&#34;maroon&#34;</span>, label <span style="color:#000;font-weight:bold">=</span> <span style="color:#d14">&#34;$y$&#34;</span>)
+</span></span><span style="display:flex;"><span>axes[<span style="color:#099">0</span>]<span style="color:#000;font-weight:bold">.</span>legend()
+</span></span><span style="display:flex;"><span>axes[<span style="color:#099">1</span>]<span style="color:#000;font-weight:bold">.</span>bar(<span style="color:#0086b3">range</span>(M), tmu, color <span style="color:#000;font-weight:bold">=</span> <span style="color:#d14">&#34;grey&#34;</span>, label <span style="color:#000;font-weight:bold">=</span> <span style="color:#d14">&#34;$T(\mu)$&#34;</span>)
+</span></span><span style="display:flex;"><span>axes[<span style="color:#099">1</span>]<span style="color:#000;font-weight:bold">.</span>legend()
+</span></span><span style="display:flex;"><span>plt<span style="color:#000;font-weight:bold">.</span>show()
+</span></span></code></pre></div><p><img src="output_65_0.png" alt="png"></p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>plt<span style="color:#000;font-weight:bold">.</span>matshow(Z<span style="color:#000;font-weight:bold">.</span>transpose())
+</span></span><span style="display:flex;"><span>plt<span style="color:#000;font-weight:bold">.</span>title(<span style="color:#d14">&#34;Optimal transport plan&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#000;font-weight:bold">.</span>show()
+</span></span></code></pre></div><p><img src="output_66_0.png" alt="png"></p>
+<h3 id="references">References</h3>
+<ul>
+<li>Gabriel Peyré, Marco Cuturi, <strong>Computational Optimal Transport</strong></li>
+</ul>
+
+</main>
+
+  <footer>
+  <script defer src="//yihui.org/js/math-code.js"></script>
+<script defer src="//mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+
+<script defer src="//yihui.org/js/center-img.js"></script>
+
+  
+  <hr/>
+  © <a href="https://istmarc.github.io">Marc</a> 2024 &ndash; 2024 | <a href="https://github.com/istmarc">Github</a>
+  
+  </footer>
+  </body>
+</html>
+

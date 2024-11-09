@@ -5,14 +5,25 @@
     <link>/categories/optimal-transport/</link>
     <description>Recent content in Optimal transport on Marc&#39;s website</description>
     <generator>Hugo -- gohugo.io</generator>
-    <language>fr</language>
-    <lastBuildDate>Sat, 26 Oct 2024 00:00:00 +0000</lastBuildDate><atom:link href="/categories/optimal-transport/index.xml" rel="self" type="application/rss+xml" />
+    <language>en</language>
+    <lastBuildDate>Sat, 09 Nov 2024 00:00:00 +0000</lastBuildDate><atom:link href="/categories/optimal-transport/index.xml" rel="self" type="application/rss+xml" />
     <item>
-      <title>Minimum cost bipartite matching</title>
-      <link>/post/2024/10/26/minimum-cost-bipartite-matching/</link>
+      <title>Optimal transport 2: Discrete optimal transport as a linear program</title>
+      <link>/post/2024/11/09/optimal-transport-2-discrete-optimal-transport-as-a-linear-program/</link>
+      <pubDate>Sat, 09 Nov 2024 00:00:00 +0000</pubDate>
+      
+      <guid>/post/2024/11/09/optimal-transport-2-discrete-optimal-transport-as-a-linear-program/</guid>
+      <description>Discrete optimal transport addresses the problem of redistributing mass between discrete distributions. In this blog, we will show how the discrete optimal transport problem can be reduced to a linear program. Then we will show how to solve the linear programming problem practically.
+Discrete probability measures Let \(X\) and \(Y\) be two discrete measures in the probability spaces \((\Omega_{X}, F_{X}, \mu)\) and \((\Omega_{Y}, F_{Y}, \nu)\).
+$$\mu(x) = \sum_{z \in \Omega_{X}} \mu(z) I_{x}(z)$$ The measure of the set \(x\) is the sum of the measures of all the \(z \in \Omega_{X}\) such that \(z \in x\).</description>
+    </item>
+    
+    <item>
+      <title>Optimal transport 1: Minimum cost bipartite matching</title>
+      <link>/post/2024/10/26/optimal-transport-1-minimum-cost-bipartite-matching/</link>
       <pubDate>Sat, 26 Oct 2024 00:00:00 +0000</pubDate>
       
-      <guid>/post/2024/10/26/minimum-cost-bipartite-matching/</guid>
+      <guid>/post/2024/10/26/optimal-transport-1-minimum-cost-bipartite-matching/</guid>
       <description>The optimal transport problem is a fascinating area in applied mathematics and optimization. One way to tackle this problem is through minimum cost bipartite matching. In this blog, we will show how this problem can be represented by a bipartite graph where the edges connecting the nodes are weighted by the transportation cost and then we will show step by step how to use minimum cost bipartite matching to solve the problem.</description>
     </item>
     
