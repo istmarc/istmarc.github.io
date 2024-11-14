@@ -95,8 +95,6 @@ $$</p>
 &amp; &amp;              &amp; \ddots &amp; \\
 &amp; &amp;              &amp; &amp; [1 \ldots 1] \\
 \end{array}\right]
-\\
-&amp; = &amp;
 \left[\begin{array}{c}
 z_{1,1} \\
 \vdots  \\
@@ -144,8 +142,7 @@ $$</p>
 &amp; \ddots &amp; \\
 &amp;        &amp; 1\\
 \end{array}\right]
-\end{array}\right]\\
-&amp; = &amp;
+\end{array}\right]
 \left[\begin{array}{c}
 z_{1,1} \\
 \vdots  \\
@@ -338,7 +335,7 @@ $$
 </span></span><span style="display:flex;"><span>        plt<span style="color:#000;font-weight:bold">.</span>savefig(filename)
 </span></span><span style="display:flex;"><span>    ax1<span style="color:#000;font-weight:bold">.</span>set_title(<span style="color:#d14">&#34;Joint and marginal histograms&#34;</span>)
 </span></span><span style="display:flex;"><span>    plt<span style="color:#000;font-weight:bold">.</span>show()
-</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>plot_map(<span style="color:#d14">&#34;../_figures/linear_program&#34;</span>)
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>plot_map()
 </span></span></code></pre></div><p><img src="output_61_0.png" alt="png"></p>
 <p>The target distribution \(\nu\) and the optimal transport map of \(\mu\)</p>
 <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>plt<span style="color:#000;font-weight:bold">.</span>bar(<span style="color:#0086b3">range</span>(M), nu, color <span style="color:#000;font-weight:bold">=</span> <span style="color:#d14">&#34;maroon&#34;</span>)
