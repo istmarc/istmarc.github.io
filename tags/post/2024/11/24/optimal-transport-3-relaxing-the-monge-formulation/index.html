@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Optimal Transport 3: Relaxing the monge formulation | Marc&#39;s website</title>
+    <link rel="stylesheet" href="/css/style.css" />
+    <link rel="stylesheet" href="/css/fonts.css" />
+    
+  </head>
+
+  <body>
+    <nav>
+    <ul class="menu">
+      
+      <li><a href="/">Home</a></li>
+      
+      <li><a href="/about/">About</a></li>
+      
+      <li><a href="/categories/">Categories</a></li>
+      
+      <li><a href="/tags/">Tags</a></li>
+      
+      <li><a href="/post/">Blog</a></li>
+      
+      <li><a href="/index.xml">Subscribe</a></li>
+      
+    </ul>
+    <hr/>
+    </nav>
+
+<div class="article-meta">
+<h1><span class="title">Optimal Transport 3: Relaxing the monge formulation</span></h1>
+<h2 class="author">Marc</h2>
+<h2 class="date">2024/11/24</h2>
+</div>
+
+<main>
+<p>The Monge formulation of the optimal transport problem focuses on finding a map that moves mass from one distribution to another. This formulation can be quite restrictive and doesn&rsquo;t always have a solution. In this blog, we will show how to relax this formulation and obtain the more flexible Kantorovich formulation that can always be solved efficiently.</p>
+<h2 id="monge-formulation">Monge formulation</h2>
+<p>Let \(X: \Omega_{X} \rightarrow \mathbb{R}\) and \(Y: \Omega_{Y} \rightarrow \mathbb{R}\) be two discrete random variables with \(\Omega_{X} = \Omega_{Y} = [1, \ldots, N]\), the Monge formulation of the optimal transport problem is</p>
+<font color="blue">
+$$ \begin{array}{c}\text{min}\\ \sigma \in \Pi_{N}\end{array}
+\left\{ \sum_{i=1}^{N} C_{i},\sigma(i) \right\}$$
+</font>
+<p>where \(\Pi_{N}\) is the set of all the permutation matrices of \({1, \ldots, N} \text{x} {1, \ldots, N}\), \(\sigma \in \Pi_{N}\) a permutation matrix and \(\sigma(i)\) the ith row of \(\sigma\).</p>
+<h3 id="libraries-to-import">Libraries to import</h3>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#000;font-weight:bold">import</span> <span style="color:#555">numpy</span> <span style="color:#000;font-weight:bold">as</span> <span style="color:#555">np</span>
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">import</span> <span style="color:#555">networkx</span> <span style="color:#000;font-weight:bold">as</span> <span style="color:#555">nx</span>
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">import</span> <span style="color:#555">math</span>
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">import</span> <span style="color:#555">matplotlib.pyplot</span> <span style="color:#000;font-weight:bold">as</span> <span style="color:#555">plt</span>
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">import</span> <span style="color:#555">matplotlib</span> <span style="color:#000;font-weight:bold">as</span> <span style="color:#555">mpl</span>
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">from</span> <span style="color:#555">matplotlib.gridspec</span> <span style="color:#000;font-weight:bold">import</span> GridSpec
+</span></span><span style="display:flex;"><span>plt<span style="color:#000;font-weight:bold">.</span>style<span style="color:#000;font-weight:bold">.</span>use(<span style="color:#d14">&#34;science&#34;</span>)
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">from</span> <span style="color:#555">scipy.optimize</span> <span style="color:#000;font-weight:bold">import</span> linprog
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">import</span> <span style="color:#555">pandas</span> <span style="color:#000;font-weight:bold">as</span> <span style="color:#555">pd</span>
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">import</span> <span style="color:#555">networkx</span> <span style="color:#000;font-weight:bold">as</span> <span style="color:#555">nx</span>
+</span></span></code></pre></div><h3 id="the-monge-fomulation-doesnt-always-have-a-solution">The Monge fomulation doesn&rsquo;t always have a solution</h3>
+<p>Suppose there are N bakeries and N cafeterias and a bakery can supply only one cafeteria.
+Each bakery produces \(x_{i}\) cakes and each cafeteria requires \(y_{i}\) cakes such that \(\sum_{i}x_{i} = \sum_{j} y_{j}\).</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>N <span style="color:#000;font-weight:bold">=</span> <span style="color:#099">6</span>
+</span></span><span style="display:flex;"><span>x <span style="color:#000;font-weight:bold">=</span> np<span style="color:#000;font-weight:bold">.</span>array([<span style="color:#099">24.</span>, <span style="color:#099">9.</span>, <span style="color:#099">3.</span>, <span style="color:#099">16.</span>, <span style="color:#099">21.</span>, <span style="color:#099">27.</span>])
+</span></span><span style="display:flex;"><span>y <span style="color:#000;font-weight:bold">=</span> np<span style="color:#000;font-weight:bold">.</span>array([<span style="color:#099">3.</span>, <span style="color:#099">23.</span>, <span style="color:#099">18.</span>, <span style="color:#099">26.</span>, <span style="color:#099">16.</span>, <span style="color:#099">14.</span>])
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>x<span style="color:#000;font-weight:bold">.</span>sum()
+</span></span></code></pre></div><pre><code>100.0
+</code></pre>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>y<span style="color:#000;font-weight:bold">.</span>sum()
+</span></span></code></pre></div><pre><code>100.0
+</code></pre>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>fig, axes <span style="color:#000;font-weight:bold">=</span> plt<span style="color:#000;font-weight:bold">.</span>subplots(<span style="color:#099">1</span>, <span style="color:#099">2</span>);
+</span></span><span style="display:flex;"><span>axes[<span style="color:#099">0</span>]<span style="color:#000;font-weight:bold">.</span>bar(<span style="color:#0086b3">range</span>(N), x, color <span style="color:#000;font-weight:bold">=</span> <span style="color:#d14">&#34;skyblue&#34;</span>)
+</span></span><span style="display:flex;"><span>axes[<span style="color:#099">0</span>]<span style="color:#000;font-weight:bold">.</span>set_xlabel(<span style="color:#d14">&#34;bakeries&#34;</span>)
+</span></span><span style="display:flex;"><span>axes[<span style="color:#099">1</span>]<span style="color:#000;font-weight:bold">.</span>bar(<span style="color:#0086b3">range</span>(N), y, color <span style="color:#000;font-weight:bold">=</span> <span style="color:#d14">&#34;silver&#34;</span>)
+</span></span><span style="display:flex;"><span>axes[<span style="color:#099">1</span>]<span style="color:#000;font-weight:bold">.</span>set_xlabel(<span style="color:#d14">&#34;cafeterias&#34;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#000;font-weight:bold">.</span>show()
+</span></span></code></pre></div><p><img src="output_9_0.png" alt="png"></p>
+<p>The problem doesn&rsquo;t have a solution in the Monge formulation. However it can be solved if we relax the constraints and each bakery can supply more than one cafeterias.</p>
+<h3 id="relaxing-the-monge-formulation--kantorovich-formulation">Relaxing the Monge formulation : Kantorovich formulation</h3>
+<p>Assume that a bakery can deliver cakes to any cafeteria. Now we are interested in finding a matrix \(M\) with values in \([0, 1]\) and all the rows and the columns sum to one. \(B_{i,j}\) represent the proportion of goods produced by the bakery \(i\) and delivered to the cafeteria \(j\).</p>
+<font color="blue">
+$$M \in \textbf{B}_{N} = \left\{ P \in \mathbb{R}^{N\text{x}N}_{+} : \sum_{i}P_{i,j}=1 \, \sum_{j}P_{i,j}=1 \right\}$$
+</font>
+<p>where \(\textbf{B}_{N}\) is the set of all the bistochastic matrices in \(R^{N\text{x}N}\)</p>
+<p>The kantorovich formulation of the optimal transport problem is</p>
+<p>$$
+\begin{array}{r}
+\begin{array}{c} \text{min}\\ P \in \textbf{B}_{N}\end{array}
+&amp;
+\sum_{i=1}^{N}\sum_{j=1}^{N} P_{i,j}C_{i,j}
+\end{array}
+$$</p>
+<p>Let \(P_{ij} = \frac{Z_{ij}}{\sum_{ij} Z_{ij}}\) where \(Z \in \textbf{N}^{N\text{x}N}\)</p>
+<p>$$
+\begin{array}{c}
+\begin{array}{c} \text{min}\\P \in \textbf{B}_{N}\end{array}
+\sum_{i=1}^{N}\sum_{j=1}^{N} P_{i,j}C_{i,j}
+&amp;
+\equiv
+\begin{array}{c} \text{min}\\Z \in \textbf{N}^{N\text{x}N}\end{array}
+\sum_{i=1}^{N}\sum_{j=1}^{N} Z_{i,j}C_{i,j} : Z_{i,j} \geq 0
+\end{array}
+$$</p>
+<p>which can be solved by the following integer linear program</p>
+<font color="blue">
+$$
+\text{min} \{ < c, z > : p \geq 0, Az = b \}
+$$
+</font>
+<p>where c is the vectorized cost matrix C, z is the vectorized matrix Z,
+\(A = \left[
+\begin{array}{c}
+I_{N} \otimes 1_{1\text{x}N}\
+1_{1\text{x}N} \otimes I_{N}
+\end{array}
+\right]\)
+and \(b=\left[\begin{array}{c}x\ y \end{array}\right]\)</p>
+<p><strong>Solving the problem with scipy</strong></p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>Ax <span style="color:#000;font-weight:bold">=</span> np<span style="color:#000;font-weight:bold">.</span>kron(np<span style="color:#000;font-weight:bold">.</span>identity(N), np<span style="color:#000;font-weight:bold">.</span>ones(N))
+</span></span><span style="display:flex;"><span>Ax<span style="color:#000;font-weight:bold">.</span>shape
+</span></span></code></pre></div><pre><code>(6, 36)
+</code></pre>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>Ay <span style="color:#000;font-weight:bold">=</span> np<span style="color:#000;font-weight:bold">.</span>kron(np<span style="color:#000;font-weight:bold">.</span>ones(N), np<span style="color:#000;font-weight:bold">.</span>identity(N))
+</span></span><span style="display:flex;"><span>Ay<span style="color:#000;font-weight:bold">.</span>shape
+</span></span></code></pre></div><pre><code>(6, 36)
+</code></pre>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>A <span style="color:#000;font-weight:bold">=</span> np<span style="color:#000;font-weight:bold">.</span>concatenate((Ax, Ay), <span style="color:#099">0</span>)
+</span></span><span style="display:flex;"><span>A<span style="color:#000;font-weight:bold">.</span>shape
+</span></span></code></pre></div><pre><code>(12, 36)
+</code></pre>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>b <span style="color:#000;font-weight:bold">=</span> np<span style="color:#000;font-weight:bold">.</span>concatenate((x, y))
+</span></span><span style="display:flex;"><span>b<span style="color:#000;font-weight:bold">.</span>shape
+</span></span></code></pre></div><pre><code>(12,)
+</code></pre>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>C <span style="color:#000;font-weight:bold">=</span> np<span style="color:#000;font-weight:bold">.</span>array([[<span style="color:#099">12.</span>, <span style="color:#099">10.</span>, <span style="color:#099">31.</span>, <span style="color:#099">27.</span>, <span style="color:#099">10.</span>, <span style="color:#099">30.</span>],
+</span></span><span style="display:flex;"><span>              [<span style="color:#099">22.</span>,  <span style="color:#099">7.</span>, <span style="color:#099">25.</span>, <span style="color:#099">15.</span>, <span style="color:#099">11.</span>, <span style="color:#099">14.</span>],
+</span></span><span style="display:flex;"><span>              [<span style="color:#099">19.</span>,  <span style="color:#099">7.</span>, <span style="color:#099">19.</span>, <span style="color:#099">10.</span>, <span style="color:#099">15.</span>, <span style="color:#099">15.</span>],
+</span></span><span style="display:flex;"><span>              [<span style="color:#099">10.</span>,  <span style="color:#099">6.</span>, <span style="color:#099">21.</span>, <span style="color:#099">19.</span>, <span style="color:#099">14.</span>, <span style="color:#099">24.</span>],
+</span></span><span style="display:flex;"><span>              [<span style="color:#099">15.</span>, <span style="color:#099">23.</span>, <span style="color:#099">14.</span>, <span style="color:#099">24.</span>, <span style="color:#099">31.</span>, <span style="color:#099">34.</span>],
+</span></span><span style="display:flex;"><span>              [<span style="color:#099">35.</span>, <span style="color:#099">26.</span>, <span style="color:#099">16.</span>,  <span style="color:#099">9.</span>, <span style="color:#099">34.</span>, <span style="color:#099">15.</span>]])
+</span></span><span style="display:flex;"><span>c <span style="color:#000;font-weight:bold">=</span> C<span style="color:#000;font-weight:bold">.</span>reshape(N <span style="color:#000;font-weight:bold">*</span> N)
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>res <span style="color:#000;font-weight:bold">=</span> linprog(c, A_eq <span style="color:#000;font-weight:bold">=</span> A, b_eq <span style="color:#000;font-weight:bold">=</span> b, method <span style="color:#000;font-weight:bold">=</span> <span style="color:#d14">&#39;highs&#39;</span>)
+</span></span></code></pre></div><p><strong>Visual checking</strong></p>
+<p>The solution of the integer linear program is</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>z <span style="color:#000;font-weight:bold">=</span> res<span style="color:#000;font-weight:bold">.</span>x
+</span></span><span style="display:flex;"><span>Z <span style="color:#000;font-weight:bold">=</span> z<span style="color:#000;font-weight:bold">.</span>reshape((N, N))
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">plot_map</span>(filename <span style="color:#000;font-weight:bold">=</span> <span style="color:#d14">&#34;&#34;</span>):
+</span></span><span style="display:flex;"><span>    fig <span style="color:#000;font-weight:bold">=</span> plt<span style="color:#000;font-weight:bold">.</span>figure(figsize<span style="color:#000;font-weight:bold">=</span>(<span style="color:#099">4</span>, <span style="color:#099">4</span>))
+</span></span><span style="display:flex;"><span>    gs <span style="color:#000;font-weight:bold">=</span> GridSpec(<span style="color:#099">2</span>, <span style="color:#099">2</span>, width_ratios<span style="color:#000;font-weight:bold">=</span>[<span style="color:#099">1</span>, <span style="color:#099">5</span>], height_ratios<span style="color:#000;font-weight:bold">=</span>[<span style="color:#099">1</span>, <span style="color:#099">5</span>])
+</span></span><span style="display:flex;"><span>    ax1 <span style="color:#000;font-weight:bold">=</span> plt<span style="color:#000;font-weight:bold">.</span>subplot(gs[<span style="color:#099">1</span>])
+</span></span><span style="display:flex;"><span>    ax1<span style="color:#000;font-weight:bold">.</span>bar(<span style="color:#0086b3">range</span>(N), y, color <span style="color:#000;font-weight:bold">=</span> <span style="color:#d14">&#34;silver&#34;</span>)
+</span></span><span style="display:flex;"><span>    ax1<span style="color:#000;font-weight:bold">.</span>axis(<span style="color:#d14">&#34;off&#34;</span>)
+</span></span><span style="display:flex;"><span>    ax2 <span style="color:#000;font-weight:bold">=</span> plt<span style="color:#000;font-weight:bold">.</span>subplot(gs[<span style="color:#099">2</span>])
+</span></span><span style="display:flex;"><span>    ax2<span style="color:#000;font-weight:bold">.</span>barh(<span style="color:#0086b3">range</span>(N), x, color <span style="color:#000;font-weight:bold">=</span> <span style="color:#d14">&#34;skyblue&#34;</span>)
+</span></span><span style="display:flex;"><span>    ax2<span style="color:#000;font-weight:bold">.</span>invert_xaxis()
+</span></span><span style="display:flex;"><span>    ax2<span style="color:#000;font-weight:bold">.</span>axis(<span style="color:#d14">&#34;off&#34;</span>)
+</span></span><span style="display:flex;"><span>    ax3 <span style="color:#000;font-weight:bold">=</span> plt<span style="color:#000;font-weight:bold">.</span>subplot(gs[<span style="color:#099">3</span>])
+</span></span><span style="display:flex;"><span>    ax3<span style="color:#000;font-weight:bold">.</span>imshow(Z, cmap <span style="color:#000;font-weight:bold">=</span> mpl<span style="color:#000;font-weight:bold">.</span>colors<span style="color:#000;font-weight:bold">.</span>ListedColormap([<span style="color:#d14">&#34;white&#34;</span>]))
+</span></span><span style="display:flex;"><span>    ax3<span style="color:#000;font-weight:bold">.</span>axis(<span style="color:#d14">&#34;off&#34;</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">for</span> i <span style="color:#000;font-weight:bold">in</span> <span style="color:#0086b3">range</span>(N):
+</span></span><span style="display:flex;"><span>        <span style="color:#000;font-weight:bold">for</span> j <span style="color:#000;font-weight:bold">in</span> <span style="color:#0086b3">range</span>(N):
+</span></span><span style="display:flex;"><span>            color <span style="color:#000;font-weight:bold">=</span> <span style="color:#d14">&#39;black&#39;</span> <span style="color:#000;font-weight:bold">if</span> Z[i,j] <span style="color:#000;font-weight:bold">&gt;</span> <span style="color:#099">0</span> <span style="color:#000;font-weight:bold">else</span> <span style="color:#d14">&#39;grey&#39;</span>
+</span></span><span style="display:flex;"><span>            plt<span style="color:#000;font-weight:bold">.</span>text(j,i, <span style="color:#0086b3">int</span>(Z[i,j]), horizontalalignment <span style="color:#000;font-weight:bold">=</span> <span style="color:#d14">&#39;center&#39;</span>,
+</span></span><span style="display:flex;"><span>                verticalalignment <span style="color:#000;font-weight:bold">=</span> <span style="color:#d14">&#39;center&#39;</span>, weight <span style="color:#000;font-weight:bold">=</span> <span style="color:#d14">&#39;bold&#39;</span>, color <span style="color:#000;font-weight:bold">=</span> color)
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">if</span> filename <span style="color:#000;font-weight:bold">!=</span> <span style="color:#d14">&#34;&#34;</span>:
+</span></span><span style="display:flex;"><span>        plt<span style="color:#000;font-weight:bold">.</span>savefig(filename)
+</span></span><span style="display:flex;"><span>    ax1<span style="color:#000;font-weight:bold">.</span>set_title(<span style="color:#d14">&#34;Joint and marginal histograms&#34;</span>)
+</span></span><span style="display:flex;"><span>    plt<span style="color:#000;font-weight:bold">.</span>show()
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>plot_map(<span style="color:#d14">&#34;../_figures/Joint and marginal histograms&#34;</span>)
+</span></span></code></pre></div><p><img src="output_28_0.png" alt="png"></p>
+<p>The bakery 0 should deliver 1 cake to the the cafeteria 0, 7 cakes to the cafeteria 1,
+and 16 cakes to the cafeteria 4.</p>
+<p>The bakery 1 should deliver all its 9 cakes to the cafeteria 5, and so on &hellip;</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>g <span style="color:#000;font-weight:bold">=</span> nx<span style="color:#000;font-weight:bold">.</span>Graph()
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>nodes_x <span style="color:#000;font-weight:bold">=</span> [<span style="color:#d14">&#39;x&#39;</span> <span style="color:#000;font-weight:bold">+</span> <span style="color:#0086b3">str</span>(i) <span style="color:#000;font-weight:bold">for</span> i <span style="color:#000;font-weight:bold">in</span> <span style="color:#0086b3">range</span>(N)]
+</span></span><span style="display:flex;"><span>nodes_y <span style="color:#000;font-weight:bold">=</span> [<span style="color:#d14">&#39;y&#39;</span> <span style="color:#000;font-weight:bold">+</span> <span style="color:#0086b3">str</span>(i) <span style="color:#000;font-weight:bold">for</span> i <span style="color:#000;font-weight:bold">in</span> <span style="color:#0086b3">range</span>(N)]
+</span></span><span style="display:flex;"><span><span style="color:#998;font-style:italic"># Adding the nodes</span>
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">for</span> n <span style="color:#000;font-weight:bold">in</span> nodes_x <span style="color:#000;font-weight:bold">+</span> nodes_y:
+</span></span><span style="display:flex;"><span>    g<span style="color:#000;font-weight:bold">.</span>add_node(n)
+</span></span><span style="display:flex;"><span><span style="color:#998;font-style:italic"># Adding the edges</span>
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">for</span> i <span style="color:#000;font-weight:bold">in</span> <span style="color:#0086b3">range</span>(N):
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">for</span> j <span style="color:#000;font-weight:bold">in</span> <span style="color:#0086b3">range</span>(N):
+</span></span><span style="display:flex;"><span>        <span style="color:#000;font-weight:bold">if</span> (Z[i, j] <span style="color:#000;font-weight:bold">&gt;</span> <span style="color:#099">0</span>):
+</span></span><span style="display:flex;"><span>            g<span style="color:#000;font-weight:bold">.</span>add_edge(nodes_x[i], nodes_y[j], weight<span style="color:#000;font-weight:bold">=</span>Z[i,j])
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#998;font-style:italic"># Drawing the graph</span>
+</span></span><span style="display:flex;"><span>pos <span style="color:#000;font-weight:bold">=</span> nx<span style="color:#000;font-weight:bold">.</span>spring_layout(g, k <span style="color:#000;font-weight:bold">=</span> <span style="color:#099">3</span>, seed <span style="color:#000;font-weight:bold">=</span> <span style="color:#099">5</span>)
+</span></span><span style="display:flex;"><span>nx<span style="color:#000;font-weight:bold">.</span>draw_networkx_nodes(g, pos, nodelist<span style="color:#000;font-weight:bold">=</span>nodes_x, node_color <span style="color:#000;font-weight:bold">=</span> <span style="color:#d14">&#39;skyblue&#39;</span>, node_size <span style="color:#000;font-weight:bold">=</span> <span style="color:#099">400</span>)
+</span></span><span style="display:flex;"><span>nx<span style="color:#000;font-weight:bold">.</span>draw_networkx_nodes(g, pos, nodelist<span style="color:#000;font-weight:bold">=</span>nodes_y, node_color <span style="color:#000;font-weight:bold">=</span> <span style="color:#d14">&#39;silver&#39;</span>, node_size <span style="color:#000;font-weight:bold">=</span> <span style="color:#099">400</span>)
+</span></span><span style="display:flex;"><span>nx<span style="color:#000;font-weight:bold">.</span>draw_networkx_labels(g, pos, font_color <span style="color:#000;font-weight:bold">=</span> <span style="color:#d14">&#39;black&#39;</span>, font_weight<span style="color:#000;font-weight:bold">=</span><span style="color:#d14">&#39;bold&#39;</span>, alpha <span style="color:#000;font-weight:bold">=</span> <span style="color:#099">1.0</span>)
+</span></span><span style="display:flex;"><span>nx<span style="color:#000;font-weight:bold">.</span>draw_networkx_edges(g, pos, style <span style="color:#000;font-weight:bold">=</span> <span style="color:#d14">&#39;dashed&#39;</span>)
+</span></span><span style="display:flex;"><span>edge_labels <span style="color:#000;font-weight:bold">=</span> nx<span style="color:#000;font-weight:bold">.</span>get_edge_attributes(g, <span style="color:#d14">&#39;weight&#39;</span>)
+</span></span><span style="display:flex;"><span>nx<span style="color:#000;font-weight:bold">.</span>draw_networkx_edge_labels(g, pos, edge_labels, label_pos<span style="color:#000;font-weight:bold">=</span><span style="color:#099">0.5</span>, font_weight<span style="color:#000;font-weight:bold">=</span><span style="color:#d14">&#39;bold&#39;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#000;font-weight:bold">.</span>axis(<span style="color:#d14">&#39;off&#39;</span>)
+</span></span><span style="display:flex;"><span>plt<span style="color:#000;font-weight:bold">.</span>tight_layout()
+</span></span><span style="display:flex;"><span>plt<span style="color:#000;font-weight:bold">.</span>show()
+</span></span></code></pre></div><p><img src="output_32_0.png" alt="png"></p>
+<p>The minimum cost is</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>np<span style="color:#000;font-weight:bold">.</span>dot(C<span style="color:#000;font-weight:bold">.</span>flatten(), Z<span style="color:#000;font-weight:bold">.</span>flatten())
+</span></span></code></pre></div><pre><code>1070.0
+</code></pre>
+<h2 id="references">References</h2>
+<ul>
+<li>Gabriel Peyré, <strong>Computational optimal transport</strong></li>
+</ul>
+
+</main>
+
+  <footer>
+  <script defer src="//yihui.org/js/math-code.js"></script>
+<script defer src="//mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+
+<script defer src="//yihui.org/js/center-img.js"></script>
+
+  
+  <hr/>
+  © <a href="https://istmarc.github.io">Marc</a> 2024 &ndash; 2024 | <a href="https://github.com/istmarc">Github</a>
+  
+  </footer>
+  </body>
+</html>
+

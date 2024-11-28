@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>How to solve a linear system of equations? | Marc&#39;s website</title>
+    <link rel="stylesheet" href="/css/style.css" />
+    <link rel="stylesheet" href="/css/fonts.css" />
+    
+  </head>
+
+  <body>
+    <nav>
+    <ul class="menu">
+      
+      <li><a href="/">Home</a></li>
+      
+      <li><a href="/about/">About</a></li>
+      
+      <li><a href="/categories/">Categories</a></li>
+      
+      <li><a href="/tags/">Tags</a></li>
+      
+      <li><a href="/post/">Blog</a></li>
+      
+      <li><a href="/index.xml">Subscribe</a></li>
+      
+    </ul>
+    <hr/>
+    </nav>
+
+<div class="article-meta">
+<h1><span class="title">How to solve a linear system of equations?</span></h1>
+<h2 class="author">Marc</h2>
+<h2 class="date">2024/11/28</h2>
+</div>
+
+<main>
+<p>While doing maths expertes (mainly Linear Algebra and Matrices) this year, I got to revisit some of the most fundamental questions in Linear Algebra. It&rsquo;s the problem of solving a system of equations.</p>
+<h3 id="system-of-linear-equations">System of linear equations</h3>
+<p>A linear system of n equations with n unknowns is the following:</p>
+<p>$$
+\begin{array}{ccccccc}
+a_{0,0}x_{0} &amp; + &amp; \cdots &amp; + &amp; a_{0, n-1}x_{n-1} &amp; = &amp; b_0\\
+&amp; &amp; \vdots &amp; &amp; \\
+a_{i,0}x_{0} &amp; + &amp; \cdots &amp; + &amp; a_{i, n-1}x_{n-1} &amp; = &amp; b_i\\
+&amp; &amp; \vdots &amp; &amp; \\
+a_{n-1,0}x_{0} &amp; + &amp; \cdots &amp; + &amp; a_{n-1, n-1}x_{n-1} &amp; = &amp; b_{n-1}\\
+\end{array}
+$$</p>
+<p>It can be written in a matrix form $$Ax = b$$</p>
+<p>where \(A = (a_{i,j})\), \(x = (x_i)\) and \(b = (b_i)\).</p>
+<p>This is a powerful technique for approaching the problem from a linear algebra perspective.</p>
+<h3 id="how-to-solve-this-problem">How to solve this problem?</h3>
+<p>One naive solution one can think of is to multiply this equation on the left by the inverse of which gives:
+\(A^{-1}Ax = A^{-1}b\) and \(x = A^{-1}b\).</p>
+<p>For a small 2x2 matrix its easy to compute its exact inverse and solve the equation.</p>
+<h3 id="inverse-the-matrix-a">Inverse the matrix A</h3>
+<p>For example for a 2x2 matrix</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#000;font-weight:bold">import</span> <span style="color:#555">numpy</span> <span style="color:#000;font-weight:bold">as</span> <span style="color:#555">np</span>
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">import</span> <span style="color:#555">scipy</span> <span style="color:#000;font-weight:bold">as</span> <span style="color:#555">sp</span>
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>A <span style="color:#000;font-weight:bold">=</span> np<span style="color:#000;font-weight:bold">.</span>matrix([<span style="color:#099">2.</span>, <span style="color:#099">3.</span>, <span style="color:#099">4.</span>, <span style="color:#099">9.</span>])<span style="color:#000;font-weight:bold">.</span>reshape((<span style="color:#099">2</span>, <span style="color:#099">2</span>))
+</span></span><span style="display:flex;"><span>A
+</span></span></code></pre></div><pre><code>matrix([[2., 3.],
+        [4., 9.]])
+</code></pre>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>b <span style="color:#000;font-weight:bold">=</span> np<span style="color:#000;font-weight:bold">.</span>matrix([<span style="color:#099">6.</span>, <span style="color:#099">15.</span>])<span style="color:#000;font-weight:bold">.</span>reshape((<span style="color:#099">2</span>, <span style="color:#099">1</span>))
+</span></span><span style="display:flex;"><span>b
+</span></span></code></pre></div><pre><code>matrix([[ 6.],
+        [15.]])
+</code></pre>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>detA <span style="color:#000;font-weight:bold">=</span> np<span style="color:#000;font-weight:bold">.</span>linalg<span style="color:#000;font-weight:bold">.</span>det(A)
+</span></span><span style="display:flex;"><span>detA
+</span></span></code></pre></div><pre><code>6.0
+</code></pre>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>invA <span style="color:#000;font-weight:bold">=</span> <span style="color:#099">1</span><span style="color:#000;font-weight:bold">/</span>detA <span style="color:#000;font-weight:bold">*</span> np<span style="color:#000;font-weight:bold">.</span>matrix([[<span style="color:#099">9.</span>, <span style="color:#000;font-weight:bold">-</span><span style="color:#099">3.</span>], [<span style="color:#000;font-weight:bold">-</span><span style="color:#099">4.</span>, <span style="color:#099">2.</span>]])
+</span></span><span style="display:flex;"><span>invA
+</span></span></code></pre></div><pre><code>matrix([[ 1.5       , -0.5       ],
+        [-0.66666667,  0.33333333]])
+</code></pre>
+<p>The solution is</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>x <span style="color:#000;font-weight:bold">=</span> invA <span style="color:#000;font-weight:bold">@</span> b
+</span></span><span style="display:flex;"><span>x
+</span></span></code></pre></div><pre><code>matrix([[1.5],
+        [1. ]])
+</code></pre>
+<p>In general, we can still compute the inverse of the matrix A</p>
+<p>For example for a 3x3 matrix</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>A <span style="color:#000;font-weight:bold">=</span> np<span style="color:#000;font-weight:bold">.</span>array([<span style="color:#099">2.</span>, <span style="color:#099">1.</span>, <span style="color:#000;font-weight:bold">-</span><span style="color:#099">1.</span>, <span style="color:#000;font-weight:bold">-</span><span style="color:#099">3.</span>, <span style="color:#000;font-weight:bold">-</span><span style="color:#099">1.</span>, <span style="color:#099">2.</span>, <span style="color:#000;font-weight:bold">-</span><span style="color:#099">2.</span>, <span style="color:#099">1.</span>, <span style="color:#099">2.</span>])<span style="color:#000;font-weight:bold">.</span>reshape((<span style="color:#099">3</span>,<span style="color:#099">3</span>))
+</span></span><span style="display:flex;"><span>A
+</span></span></code></pre></div><pre><code>array([[ 2.,  1., -1.],
+       [-3., -1.,  2.],
+       [-2.,  1.,  2.]])
+</code></pre>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>b <span style="color:#000;font-weight:bold">=</span> np<span style="color:#000;font-weight:bold">.</span>array([<span style="color:#099">8</span>, <span style="color:#000;font-weight:bold">-</span><span style="color:#099">11.</span>, <span style="color:#000;font-weight:bold">-</span><span style="color:#099">3.</span>])<span style="color:#000;font-weight:bold">.</span>reshape((<span style="color:#099">3</span>, <span style="color:#099">1</span>))
+</span></span><span style="display:flex;"><span>b
+</span></span></code></pre></div><pre><code>array([[  8.],
+       [-11.],
+       [ -3.]])
+</code></pre>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>invA <span style="color:#000;font-weight:bold">=</span> np<span style="color:#000;font-weight:bold">.</span>linalg<span style="color:#000;font-weight:bold">.</span>inv(A)
+</span></span><span style="display:flex;"><span>invA
+</span></span></code></pre></div><pre><code>array([[ 4.,  3., -1.],
+       [-2., -2.,  1.],
+       [ 5.,  4., -1.]])
+</code></pre>
+<p>The solution is</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>x <span style="color:#000;font-weight:bold">=</span> invA <span style="color:#000;font-weight:bold">@</span> b
+</span></span><span style="display:flex;"><span>x
+</span></span></code></pre></div><pre><code>array([[ 2.],
+       [ 3.],
+       [-1.]])
+</code></pre>
+<p>The downside of this approach is that it&rsquo;s very costly and complicated to compute the inverse of a matrix even numerically. What about a large matrix say a 100x100 matrix of even a 1000x1000 matrix?</p>
+<h3 id="matrix-decomposition-methods-to-the-rescue">Matrix decomposition methods to the rescue</h3>
+<p>More advanced methods rely on matrix decomposition methods. We factorise the matrix A generally into a product of two or three matrices with good properties thus making it easy to solve the problem.</p>
+<h3 id="forward-and-backward-substitution">Forward and backward substitution</h3>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#998;font-style:italic"># Solve Ux=b where U is upper triangular</span>
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">backward_subt</span>(U, b):
+</span></span><span style="display:flex;"><span>    m, n <span style="color:#000;font-weight:bold">=</span> U<span style="color:#000;font-weight:bold">.</span>shape
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">assert</span>(m <span style="color:#000;font-weight:bold">==</span> n)
+</span></span><span style="display:flex;"><span>    x <span style="color:#000;font-weight:bold">=</span> np<span style="color:#000;font-weight:bold">.</span>zeros(n)
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">for</span> i <span style="color:#000;font-weight:bold">in</span> <span style="color:#0086b3">reversed</span>(<span style="color:#0086b3">range</span>(n)):
+</span></span><span style="display:flex;"><span>        s <span style="color:#000;font-weight:bold">=</span> <span style="color:#099">0.</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#000;font-weight:bold">for</span> j <span style="color:#000;font-weight:bold">in</span> <span style="color:#0086b3">range</span>(i, n):
+</span></span><span style="display:flex;"><span>            s <span style="color:#000;font-weight:bold">+=</span> U[i,j] <span style="color:#000;font-weight:bold">*</span> x[j]
+</span></span><span style="display:flex;"><span>        x[i] <span style="color:#000;font-weight:bold">=</span> (b[i] <span style="color:#000;font-weight:bold">-</span> s) <span style="color:#000;font-weight:bold">/</span> U[i,i]
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">return</span> x
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#998;font-style:italic"># Solve Lx=b where L is lower triangular</span>
+</span></span><span style="display:flex;"><span><span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">forward_subt</span>(L, b):
+</span></span><span style="display:flex;"><span>    m, n <span style="color:#000;font-weight:bold">=</span> L<span style="color:#000;font-weight:bold">.</span>shape
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">assert</span>(m <span style="color:#000;font-weight:bold">==</span> n)
+</span></span><span style="display:flex;"><span>    x <span style="color:#000;font-weight:bold">=</span> np<span style="color:#000;font-weight:bold">.</span>zeros(n)
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">for</span> i <span style="color:#000;font-weight:bold">in</span> <span style="color:#0086b3">range</span>(n):
+</span></span><span style="display:flex;"><span>        s <span style="color:#000;font-weight:bold">=</span> <span style="color:#099">0.</span>
+</span></span><span style="display:flex;"><span>        <span style="color:#000;font-weight:bold">for</span> j <span style="color:#000;font-weight:bold">in</span> <span style="color:#0086b3">range</span>(<span style="color:#099">0</span>, i):
+</span></span><span style="display:flex;"><span>            s <span style="color:#000;font-weight:bold">+=</span> L[i,j] <span style="color:#000;font-weight:bold">*</span> x[j]
+</span></span><span style="display:flex;"><span>        x[i] <span style="color:#000;font-weight:bold">=</span> (b[i] <span style="color:#000;font-weight:bold">-</span> s) <span style="color:#000;font-weight:bold">/</span> L[i,i]
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">return</span> x
+</span></span></code></pre></div><h3 id="qr-decomposition">QR decomposition</h3>
+<p>Decompose \(A = QR\) where \(Q\) is orthogonal(\(Q^{-1}=Q^{T}\)) and \(R\) is upper triangular</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>m, n <span style="color:#000;font-weight:bold">=</span> A<span style="color:#000;font-weight:bold">.</span>shape
+</span></span><span style="display:flex;"><span>Q, R <span style="color:#000;font-weight:bold">=</span> np<span style="color:#000;font-weight:bold">.</span>linalg<span style="color:#000;font-weight:bold">.</span>qr(A)
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>Q
+</span></span></code></pre></div><pre><code>array([[-0.48507125,  0.41166465,  0.77151675],
+       [ 0.72760688, -0.29939248,  0.6172134 ],
+       [ 0.48507125,  0.86075337, -0.15430335]])
+</code></pre>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>R
+</span></span></code></pre></div><pre><code>array([[-4.12310563, -0.72760688,  2.9104275 ],
+       [ 0.        ,  1.5718105 ,  0.71105713],
+       [ 0.        ,  0.        ,  0.15430335]])
+</code></pre>
+<p>From \(Ax=b\), we have \(QRx=b\), and \(Rx=Q^Tb\)</p>
+<p>Solve \(z = Q^Tb\) using backward subtitution</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>Q<span style="color:#000;font-weight:bold">.</span>T <span style="color:#000;font-weight:bold">@</span> b
+</span></span></code></pre></div><pre><code>array([[-13.33945938],
+       [  4.00437436],
+       [ -0.15430335]])
+</code></pre>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>z <span style="color:#000;font-weight:bold">=</span> (Q<span style="color:#000;font-weight:bold">.</span>T <span style="color:#000;font-weight:bold">@</span> b)<span style="color:#000;font-weight:bold">.</span>flatten()
+</span></span><span style="display:flex;"><span>x <span style="color:#000;font-weight:bold">=</span> backward_subt(R, z)
+</span></span><span style="display:flex;"><span>x
+</span></span></code></pre></div><pre><code>array([ 2.,  3., -1.])
+</code></pre>
+<h3 id="lu-decomposition">LU decomposition</h3>
+<p>Decompose a matrix into a product \(A = PLU\) and solve \(PLU x= b\), which is \(LUx = P^Tb\)</p>
+<ul>
+<li>Solve \(Lz = t\) using forward substitution where \(z = Ux\) and \(t = P^T b\)</li>
+<li>Solve \(Ux = z\) using backward subtitution</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>P, L, U <span style="color:#000;font-weight:bold">=</span> sp<span style="color:#000;font-weight:bold">.</span>linalg<span style="color:#000;font-weight:bold">.</span>lu(A)
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>t <span style="color:#000;font-weight:bold">=</span> (P<span style="color:#000;font-weight:bold">.</span>T <span style="color:#000;font-weight:bold">@</span> b)<span style="color:#000;font-weight:bold">.</span>flatten()
+</span></span><span style="display:flex;"><span>z <span style="color:#000;font-weight:bold">=</span> forward_subt(L, t)
+</span></span><span style="display:flex;"><span>z
+</span></span></code></pre></div><pre><code>array([-11.        ,   4.33333333,  -0.2       ])
+</code></pre>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>x <span style="color:#000;font-weight:bold">=</span> backward_subt(U, z)
+</span></span><span style="display:flex;"><span>x
+</span></span></code></pre></div><pre><code>array([ 2.,  3., -1.])
+</code></pre>
+<h3 id="svd-decomposition">SVD decomposition</h3>
+<p>Decompose \(A = U \Sigma V^T\), the solution is \(x = V \Sigma^{-1} U^T b\)</p>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>U, S, Vt <span style="color:#000;font-weight:bold">=</span> np<span style="color:#000;font-weight:bold">.</span>linalg<span style="color:#000;font-weight:bold">.</span>svd(A)
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>U
+</span></span></code></pre></div><pre><code>array([[-0.45463329, -0.45500496, -0.76568862],
+       [ 0.72562679,  0.30930747, -0.61465002],
+       [ 0.51650202, -0.83504454,  0.18954231]])
+</code></pre>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>S
+</span></span></code></pre></div><pre><code>array([5.10343603, 1.71519373, 0.11424157])
+</code></pre>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>Vt
+</span></span></code></pre></div><pre><code>array([[-0.80713287, -0.13006101,  0.57586514],
+       [-0.09785674, -0.93246433, -0.34775615],
+       [-0.58220322,  0.3370377 , -0.73989526]])
+</code></pre>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>S
+</span></span></code></pre></div><pre><code>array([5.10343603, 1.71519373, 0.11424157])
+</code></pre>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>invS <span style="color:#000;font-weight:bold">=</span> (np<span style="color:#000;font-weight:bold">.</span>ones(<span style="color:#099">3</span>) <span style="color:#000;font-weight:bold">/</span> S) 
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#000;font-weight:bold">def</span> <span style="color:#900;font-weight:bold">to_dense</span>(x):
+</span></span><span style="display:flex;"><span>    n <span style="color:#000;font-weight:bold">=</span> x<span style="color:#000;font-weight:bold">.</span>shape[<span style="color:#099">0</span>]
+</span></span><span style="display:flex;"><span>    y <span style="color:#000;font-weight:bold">=</span> np<span style="color:#000;font-weight:bold">.</span>zeros((n, n))
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">for</span> i <span style="color:#000;font-weight:bold">in</span> <span style="color:#0086b3">range</span>(n):
+</span></span><span style="display:flex;"><span>        <span style="color:#000;font-weight:bold">for</span> j <span style="color:#000;font-weight:bold">in</span> <span style="color:#0086b3">range</span>(n):
+</span></span><span style="display:flex;"><span>            y[i,i] <span style="color:#000;font-weight:bold">=</span> x[i]
+</span></span><span style="display:flex;"><span>    <span style="color:#000;font-weight:bold">return</span> y
+</span></span></code></pre></div><div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>invS <span style="color:#000;font-weight:bold">=</span> np<span style="color:#000;font-weight:bold">.</span>ones(n) <span style="color:#000;font-weight:bold">/</span> S
+</span></span><span style="display:flex;"><span>invS
+</span></span></code></pre></div><pre><code>array([0.19594642, 0.58302452, 8.75338148])
+</code></pre>
+<div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>x <span style="color:#000;font-weight:bold">=</span> Vt<span style="color:#000;font-weight:bold">.</span>T <span style="color:#000;font-weight:bold">@</span> to_dense(invS) <span style="color:#000;font-weight:bold">@</span> U<span style="color:#000;font-weight:bold">.</span>T <span style="color:#000;font-weight:bold">@</span> b
+</span></span><span style="display:flex;"><span>x <span style="color:#000;font-weight:bold">=</span> x<span style="color:#000;font-weight:bold">.</span>flatten()
+</span></span><span style="display:flex;"><span>x
+</span></span></code></pre></div><pre><code>array([ 2.,  3., -1.])
+</code></pre>
+<h3 id="conclusion">Conclusion</h3>
+<p>It might be straightforward to try to inverse the matrix A when solving a linear system of n equations with n unknowns written in matrix form as \(Ax = b\), but this approach is costly in practice. One must always use a matrix decomposition method and especially the QR decomposition which is very efficient in practice and numerically stable.</p>
+
+</main>
+
+  <footer>
+  <script defer src="//yihui.org/js/math-code.js"></script>
+<script defer src="//mathjax.rstudio.com/latest/MathJax.js?config=TeX-MML-AM_CHTML"></script>
+
+<script defer src="//yihui.org/js/center-img.js"></script>
+
+  
+  <hr/>
+  © <a href="https://istmarc.github.io">Marc</a> 2024 &ndash; 2024 | <a href="https://github.com/istmarc">Github</a>
+  
+  </footer>
+  </body>
+</html>
+
