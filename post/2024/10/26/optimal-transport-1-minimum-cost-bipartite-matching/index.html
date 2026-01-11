@@ -38,7 +38,7 @@
 <main>
 <p>The optimal transport problem is a fascinating area in applied mathematics and optimization. One way to tackle this problem is through minimum cost bipartite matching. In this blog, we will show how this problem can be represented by a bipartite graph where the edges connecting the nodes are weighted by the transportation cost and then we will show step by step how to use minimum cost bipartite matching to solve the problem.</p>
 <h2 id="monge-formulation">Monge formulation</h2>
-<p>Let \( (\Omega_{X}, F_{X}, \mu) \) and \( (\Omega_{Y}, F_{Y}, \nu) \) be two probability spaces with \(\mu\) and \(\nu\) discrete measures.
+<p>Let \( \(\Omega_{X}, F_{X}, \mu\) \) and \( \(\Omega_{Y}, F_{Y}, \nu\) \) be two probability spaces with \(\mu\) and \(\nu\) discrete measures.
 The Monge formulation of the optimal transport problem is</p>
 <font color="blue">
 $$\min \left\{ \sum_{X} c_{T}(x) \mu(x) : T_{\#}(\mu) = \nu \right\}$$
@@ -73,11 +73,11 @@ $$ \begin{array}{c}\text{min}\\ \sigma \in \Pi_{N}\end{array}
 This is a problem of finding an optimal transport map i.e. an application T that maps a bakery to a cafeteria
 and minimizes the total cost.</p>
 <p>The number of possibilities is</p>
-<p>$$
+$$
 \begin{align}
-\left( \begin{array}{cc}6\1\end{array} \right) * \left( \begin{array}{cc}5\1\end{array} \right) * &hellip; * \left( \begin{array}{cc}2\1\end{array} \right) * 1 = 6!
+\left( \begin{array}{cc}6\\1\end{array} \right) * \left( \begin{array}{cc}5\\1\end{array} \right) * ... * \left( \begin{array}{cc}2\\1\end{array} \right) * 1 = 6!
 \end{align}
-$$</p>
+$$
 <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>math<span style="color:#000;font-weight:bold">.</span>factorial(<span style="color:#099">6</span>)
 </span></span></code></pre></div><pre><code>720
 </code></pre>
@@ -86,9 +86,9 @@ $$</p>
 </span></span></code></pre></div><pre><code>103.0
 </code></pre>
 <p>Instead of testing all the N! possible solutions which is impractical, we formulate the problem as follow</p>
-<p>$$
-\begin{array}{c}\text{min}\ \sigma \in \Pi_{N}\end{array} { \sum_{i=1}^{N} C_{i},\sigma(i) }
-$$</p>
+$$
+\begin{array}{c}\text{min}\\ \sigma \in \Pi_{N}\end{array} \{ \sum_{i=1}^{N} C_{i},\sigma(i) \}
+$$
 <p>where \(C\) is the cost and \(\sigma\) is a permutation matrix of \( {1, \ldots, N} \text{x} {1, \ldots, N} \)</p>
 <h3 id="optimal-transport-as-minimum-cost-bipartite-matching">Optimal transport as minimum cost bipartite matching</h3>
 <p>Let&rsquo;s construct a graph where both the bakeries and the cafeterias are the nodes</p>
@@ -194,7 +194,7 @@ the bakery 4 to supply the cafeteria 2 and so on&hellip;</p>
        [0., 0., 0., 1., 0., 0.]])
 </code></pre>
 <p>z is the permutation matrix that minimizes the transportation cost</p>
-<p>$$z = \begin{array}{c}\text{argmin}\ \sigma \in \Pi_{N}\end{array} \sum_{i=1}^{N} C_{i},\sigma(i)$$</p>
+$$z = \begin{array}{c}\text{argmin}\\ \sigma \in \Pi_{N}\end{array} \sum_{i=1}^{N} C_{i},\sigma(i)$$
 <p>The corresponding bipartite graph is</p>
 <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span>sg <span style="color:#000;font-weight:bold">=</span> nx<span style="color:#000;font-weight:bold">.</span>Graph()
 </span></span><span style="display:flex;"><span>nodes_x <span style="color:#000;font-weight:bold">=</span> [<span style="color:#d14">&#39;x&#39;</span> <span style="color:#000;font-weight:bold">+</span> <span style="color:#0086b3">str</span>(_x) <span style="color:#000;font-weight:bold">for</span> _x <span style="color:#000;font-weight:bold">in</span> <span style="color:#0086b3">list</span>(<span style="color:#0086b3">range</span>(N))]
@@ -240,7 +240,7 @@ the bakery 4 to supply the cafeteria 2 and so on&hellip;</p>
 
   
   <hr/>
-  © <a href="https://istmarc.github.io">Marc</a> 2024 &ndash; 2024 | <a href="https://github.com/istmarc">Github</a>
+  © <a href="https://istmarc.github.io">Marc</a> 2024 &ndash; 2026 | <a href="https://github.com/istmarc">Github</a>
   
   </footer>
   </body>

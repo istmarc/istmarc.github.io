@@ -39,15 +39,19 @@
 <p>Discrete optimal transport addresses the problem of redistributing mass between discrete distributions. In this blog, we will show how the discrete optimal transport problem can be reduced to a linear program. Then we will show how to solve the linear programming problem practically.</p>
 <h3 id="discrete-probability-measures">Discrete probability measures</h3>
 <p>Let \(X\) and \(Y\) be two discrete measures in the probability spaces \((\Omega_{X}, F_{X}, \mu)\) and \((\Omega_{Y}, F_{Y}, \nu)\).</p>
-<p><font color="blue">$$\mu(x) = \sum_{z \in \Omega_{X}} \mu(z) I_{x}(z)$$
+$$\mu(x) = \sum_{z \in \Omega_{X}} \mu(z) I_{x}(z)$$
+<p>
 </font></p>
 <p>The measure of the set \(x\) is the sum of the measures of all the \(z \in \Omega_{X}\) such that \(z \in x\).</p>
 <p>similarly</p>
-<p><font color="blue">$$\nu(y) = \sum_{z \in \Omega_{Y}} \nu(z) I_{y}(z)$$</font></p>
+$$\nu(y) = \sum_{z \in \Omega_{Y}} \nu(z) I_{y}(z)$$
+<p></font></p>
 <p>with</p>
-<p><font color="blue">$$\sum_{x \in \Omega_{X}} \mu(x) = 1$$</font></p>
+$$\sum_{x \in \Omega_{X}} \mu(x) = 1$$
+<p></font></p>
 <p>and</p>
-<p><font color="blue">$$\sum_{y \in \Omega_{Y}} \nu(y) = 1$$</font></p>
+$$\sum_{y \in \Omega_{Y}} \nu(y) = 1$$
+<p></font></p>
 <h3 id="optimal-transport-for-discrete-distributions">Optimal transport for discrete distributions</h3>
 <p>the optimal transport problem for discrete distributions is</p>
 <font color="blue">
@@ -59,137 +63,138 @@ $$
 </font>
 <p>If \(X\) is defined in \(\Omega_{X} = [1, 2, \ldots N]\) and \(Y\) is defined in \(\Omega_{Y} = [1,2, \ldots, M]\). We note \(\mu_i\) the mass of \(i\) in \((\Omega_{X}, F_{X}, \mu)\) and \(\nu_{i}\) the mass of \(i\) in \((\Omega_{Y}, F_{Y}, \nu)\).</p>
 <p>The optimal transport problem from \(X\) to \(Y\) is</p>
-<p>$$
+$$
 \begin{align}
-\text{min} { \sum_{1 \leq i \leq n, 1 \leq j \leq m}c_{i, j} \gamma_{i,j} : \gamma \in \Gamma(X,Y) }
+\text{min} \{ \sum_{1 \leq i \leq n, 1 \leq j \leq m}c_{i, j} \gamma_{i,j} : \gamma \in \Gamma(X,Y) \}
 \end{align}
-$$</p>
+$$
 <p>This can be rewritten as</p>
-<p>$$
+$$
 \begin{align}
 \text{min} { \sum_{1 \leq i \leq n, 1 \leq j \leq m}(C \circ \gamma)_{i,j} }
 \end{align}
-$$</p>
+$$
 <p>where \(\circ\) is the hadamard product.</p>
 <p>Let note vec the operation of vectorizing a matrix by stacking its row vectors.
 If vec\((C)\) is the vectorization of \(C\) and vec\((\gamma)\) is the vectorization of \(\gamma\) then we have</p>
-<p>$$
+$$
 \begin{align}
-\text{min} { &lt; \text{vec}(C), \text{vec}(\gamma)&gt; : \Sigma_{j=1}^{n}\gamma_{i,j} = \mu_{i}\text{, and } \Sigma_{i=1}^{n}\gamma_{i,j} = \nu_{j} }
+\text{min} { < \text{vec}(C), \text{vec}(\gamma)> : \Sigma_{j=1}^{n}\gamma_{i,j} = \mu_{i}\text{, and } \Sigma_{i=1}^{n}\gamma_{i,j} = \nu_{j} }
 \end{align}
-$$</p>
+$$
 <p>where \(&lt;,&gt;\) is the dot product.</p>
 <p>let \(z\) = vec\((\gamma)\) and \(c\) = vec\((C)\)</p>
-<p>$$
+$$
 \begin{align}
-\text{min} { &lt;c, z&gt; : \Sigma_{j=1}^{m}\gamma_{i,j} = \mu_{i}\text{, and } \Sigma_{i=1}^{n}\gamma_{i,j} = \nu_{j} }
+\text{min} { <c, z> : \Sigma_{j=1}^{m}\gamma_{i,j} = \mu_{i}\text{, and } \Sigma_{i=1}^{n}\gamma_{i,j} = \nu_{j} }
 \end{align}
-$$</p>
-<p>$$
+$$
+$$
 \begin{array}{ccc}
-(I_{M} \otimes 1_{1\text{x}N})z &amp; = &amp;
+(I_{M} \otimes 1_{1\text{x}N})z & = & 
 \left[\begin{array}{c c c c c}
-[1 \ldots 1] &amp; &amp;              &amp; &amp; &amp; \\
-&amp; \ddots              &amp; &amp; &amp; \\
-&amp; &amp; [1 \ldots 1] &amp; &amp; &amp; \\
-&amp; &amp;              &amp; \ddots &amp; \\
-&amp; &amp;              &amp; &amp; [1 \ldots 1] \\
+[1 \ldots 1] & &              & & & \\\
+             & \ddots              & & & \\\
+             & & [1 \ldots 1] & & & \\\
+             & &              & \ddots & \\\
+             & &              & & [1 \ldots 1] \\\
 \end{array}\right]
 \left[\begin{array}{c}
-z_{1,1} \\
-\vdots  \\
-z_{1,N} \\
-\vdots  \\
-z_{i,1} \\
-\vdots  \\
-z_{i,N} \\
-\vdots  \\
-z_{M,1} \\
-\vdots  \\
-z_{M,N} \\
+z_{1,1} \\\
+\vdots  \\\
+z_{1,N} \\\
+\vdots  \\\
+z_{i,1} \\\
+\vdots  \\\
+z_{i,N} \\\
+\vdots  \\\
+z_{M,1} \\\
+\vdots  \\\
+z_{M,N} \\\
 \end{array}\right]
-\\
-&amp; = &amp;
+\\\
+& = & 
 \left[\begin{array}{c}
-\Sigma_{j=1}^{N}z_{1,j}\\
-\vdots \\
-\Sigma_{j=1}^{N}z_{i,j}\\
-\vdots \\
-\Sigma_{j=1}^{N}z_{M,j}\\
-\end{array}\right]\\
-&amp; = &amp; \mu \\
+       \Sigma_{j=1}^{N}z_{1,j}\\\
+       \vdots \\\
+       \Sigma_{j=1}^{N}z_{i,j}\\\
+        \vdots \\\
+          \Sigma_{j=1}^{N}z_{M,j}\\\
+ \end{array}\right]\\\
+ & = & \mu \\\
 \end{array}
-$$</p>
+$$
 <p>where \(\otimes\) is the kronecker product, and</p>
-<p>$$
+$$
 \begin{array}{ccc}
-(1_{1\text{x}M} \otimes I_{N})z &amp; = &amp;
+(1_{1\text{x}M} \otimes I_{N})z & = &
 \left[\begin{array}{c c c c c}
 \left[\begin{array}{ccc}
-1 &amp;        &amp;  \\
-&amp; \ddots &amp; \\
-&amp;        &amp; 1\\
+1 &        &  \\\
+  & \ddots & \\\
+  &        & 1\\\
 \end{array}\right]
-&amp; \cdots &amp;
+& \cdots &
 \left[\begin{array}{ccc}
-1 &amp;        &amp;  \\
-&amp; \ddots &amp; \\
-&amp;        &amp; 1\\
+1 &        &  \\\
+  & \ddots & \\\
+  &        & 1\\\
 \end{array}\right]
-&amp; \cdots &amp;
+& \cdots &
 \left[\begin{array}{ccc}
-1 &amp;        &amp;  \\
-&amp; \ddots &amp; \\
-&amp;        &amp; 1\\
+1 &        &  \\\
+  & \ddots & \\\
+  &        & 1\\\
 \end{array}\right]
 \end{array}\right]
 \left[\begin{array}{c}
-z_{1,1} \\
-\vdots  \\
-z_{1,N} \\
-\vdots  \\
-z_{i,1} \\
-\vdots  \\
-z_{i,N} \\
-\vdots  \\
-z_{M,1} \\
-\vdots  \\
-z_{M,N} \\
-\end{array}\right]\\
-&amp; = &amp;
+z_{1,1} \\\
+\vdots  \\\
+z_{1,N} \\\
+\vdots  \\\
+z_{i,1} \\\
+\vdots  \\\
+z_{i,N} \\\
+\vdots  \\\
+z_{M,1} \\\
+\vdots  \\\
+z_{M,N} \\\
+\end{array}\right]\\\
+ & = & 
 \left[\begin{array}{c}
-\Sigma_{i=1}^{N}z_{i,1}\\
-\vdots \\
-\Sigma_{i=1}^{N}z_{i,j}\\
-\vdots \\
-\Sigma_{i=1}^{N}z_{i,M}\\
-\end{array}\right]\\
-&amp; = &amp; \nu \\
+   \Sigma_{i=1}^{N}z_{i,1}\\\
+   \vdots \\\
+   \Sigma_{i=1}^{N}z_{i,j}\\\
+   \vdots \\\
+   \Sigma_{i=1}^{N}z_{i,M}\\\
+   \end{array}\right]\\\
+ & = & \nu \\\
 \end{array}
-$$</p>
+$$
 <p>So we have</p>
-<p>$$(I_{M} \otimes 1_{1\text{x}N})z = \mu$$</p>
+$$(I_{M} \otimes 1_{1\text{x}N})z = \mu$$
 <p>and</p>
-<p>$$(1_{1\text{x}M} \otimes I_{N})z = \nu$$</p>
+$$(1_{1\text{x}M} \otimes I_{N})z = \nu$$
 <p>In matrix form, we have
+</p>
 $$
 \begin{array}{ccc}
 \left[
 \begin{array}{c}
-I_{m} \otimes 1_{1\text{x}n}\
+I_{m} \otimes 1_{1\text{x}n}\\
 1_{1\text{x}m} \otimes I_{n}
 \end{array}
 \right]
 z
-&amp; = &amp;
+& = &
 \left[
-\begin{array}{c}
-\mu\
-\nu
-\end{array}
+    \begin{array}{c}
+        \mu\\
+        \nu
+    \end{array}
 \right]
 \end{array}
-$$</p>
+$$
 <p>Let&rsquo;s note \(A = \left[
 \begin{array}{c}
 I_{m} \otimes 1_{1\text{x}n}\
@@ -199,18 +204,21 @@ I_{m} \otimes 1_{1\text{x}n}\
 and \(b=\left[\begin{array}{c}\mu \\ \nu \end{array}\right]\)</p>
 <p>The equation above becomes \(Az=b\)</p>
 <p>Thereforce the following optimal transport problem
+</p>
 $$
 \begin{align}
-\text{min} { &lt;c, z&gt; : z \geq 0, Az = b}
+\text{min} { <c, z> : z \geq 0, Az = b}
 \end{align}
-$$</p>
+$$
 <p>can be reduced to a linear program
 <font color="blue">
+</p>
 $$
 \begin{align}
-\text{min} { &lt;c, z&gt; : z \geq 0, Az \leq b}
+\text{min} { <c, z> : z \geq 0, Az \leq b}
 \end{align}
 $$
+<p>
 </font></p>
 <h3 id="libraries-to-import">Libraries to import</h3>
 <div class="highlight"><pre tabindex="0" style="background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-python" data-lang="python"><span style="display:flex;"><span><span style="color:#000;font-weight:bold">import</span> <span style="color:#555">numpy</span> <span style="color:#000;font-weight:bold">as</span> <span style="color:#555">np</span>
@@ -369,7 +377,7 @@ $$
 
   
   <hr/>
-  © <a href="https://istmarc.github.io">Marc</a> 2024 &ndash; 2024 | <a href="https://github.com/istmarc">Github</a>
+  © <a href="https://istmarc.github.io">Marc</a> 2024 &ndash; 2026 | <a href="https://github.com/istmarc">Github</a>
   
   </footer>
   </body>

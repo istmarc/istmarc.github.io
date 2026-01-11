@@ -4,47 +4,30 @@
     <title>Mathematics on Marc&#39;s website</title>
     <link>/categories/mathematics/</link>
     <description>Recent content in Mathematics on Marc&#39;s website</description>
-    <generator>Hugo -- gohugo.io</generator>
+    <generator>Hugo</generator>
     <language>en</language>
-    <lastBuildDate>Sun, 24 Nov 2024 00:00:00 +0000</lastBuildDate><atom:link href="/categories/mathematics/index.xml" rel="self" type="application/rss+xml" />
-    <item>
-      <title>Optimal Transport 3: Relaxing the monge formulation</title>
-      <link>/post/2024/11/24/optimal-transport-3-relaxing-the-monge-formulation/</link>
-      <pubDate>Sun, 24 Nov 2024 00:00:00 +0000</pubDate>
-      
-      <guid>/post/2024/11/24/optimal-transport-3-relaxing-the-monge-formulation/</guid>
-      <description>The Monge formulation of the optimal transport problem focuses on finding a map that moves mass from one distribution to another. This formulation can be quite restrictive and doesn&amp;rsquo;t always have a solution. In this blog, we will show how to relax this formulation and obtain the more flexible Kantorovich formulation that can always be solved efficiently.
-Monge formulation Let \(X: \Omega_{X} \rightarrow \mathbb{R}\) and \(Y: \Omega_{Y} \rightarrow \mathbb{R}\) be two discrete random variables with \(\Omega_{X} = \Omega_{Y} = [1, \ldots, N]\), the Monge formulation of the optimal transport problem is</description>
-    </item>
-    
+    <lastBuildDate>Sat, 09 Nov 2024 00:00:00 +0000</lastBuildDate>
+    <atom:link href="/categories/mathematics/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Optimal transport 2: Discrete optimal transport as a linear program</title>
       <link>/post/2024/11/09/optimal-transport-2-discrete-optimal-transport-as-a-linear-program/</link>
       <pubDate>Sat, 09 Nov 2024 00:00:00 +0000</pubDate>
-      
       <guid>/post/2024/11/09/optimal-transport-2-discrete-optimal-transport-as-a-linear-program/</guid>
-      <description>Discrete optimal transport addresses the problem of redistributing mass between discrete distributions. In this blog, we will show how the discrete optimal transport problem can be reduced to a linear program. Then we will show how to solve the linear programming problem practically.
-Discrete probability measures Let \(X\) and \(Y\) be two discrete measures in the probability spaces \((\Omega_{X}, F_{X}, \mu)\) and \((\Omega_{Y}, F_{Y}, \nu)\).
-$$\mu(x) = \sum_{z \in \Omega_{X}} \mu(z) I_{x}(z)$$ The measure of the set \(x\) is the sum of the measures of all the \(z \in \Omega_{X}\) such that \(z \in x\).</description>
+      <description>Discrete optimal transport addresses the problem of redistributing mass between discrete distributions. In this blog, we will show how the discrete optimal transport problem can be reduced to a linear program. Then we will show how to solve the linear programming problem practically.&#xA;Discrete probability measures Let \(X\) and \(Y\) be two discrete measures in the probability spaces \((\Omega_{X}, F_{X}, \mu)\) and \((\Omega_{Y}, F_{Y}, \nu)\).&#xA;$$\mu(x) = \sum_{z \in \Omega_{X}} \mu(z) I_{x}(z)$$ The measure of the set \(x\) is the sum of the measures of all the \(z \in \Omega_{X}\) such that \(z \in x\).</description>
     </item>
-    
     <item>
       <title>On designing Tenseur, A C&#43;&#43; tensor library with lazy evaluation</title>
       <link>/post/2024/10/27/on-designing-tenseur-a-c-tensor-library-with-lazy-evaluation/</link>
       <pubDate>Sun, 27 Oct 2024 00:00:00 +0000</pubDate>
-      
       <guid>/post/2024/10/27/on-designing-tenseur-a-c-tensor-library-with-lazy-evaluation/</guid>
       <description>Tenseur is a header only c++ numerical library. It&amp;rsquo;s designed to provide high-performance linear algebra and multilinear algebra operations by laveraging the capabilities of BLAS (Basic Linear Algebra Subprograms) and SIMD (Single Instruction, Multiple Data) backends. This library, currently in development, aims to offer a robust framework for numerical computations focusing on both performance and easy of use. The code is available on Github. In this blog post, we will first describe some design decisions.</description>
     </item>
-    
     <item>
       <title>Optimal transport 1: Minimum cost bipartite matching</title>
       <link>/post/2024/10/26/optimal-transport-1-minimum-cost-bipartite-matching/</link>
       <pubDate>Sat, 26 Oct 2024 00:00:00 +0000</pubDate>
-      
       <guid>/post/2024/10/26/optimal-transport-1-minimum-cost-bipartite-matching/</guid>
       <description>The optimal transport problem is a fascinating area in applied mathematics and optimization. One way to tackle this problem is through minimum cost bipartite matching. In this blog, we will show how this problem can be represented by a bipartite graph where the edges connecting the nodes are weighted by the transportation cost and then we will show step by step how to use minimum cost bipartite matching to solve the problem.</description>
     </item>
-    
   </channel>
 </rss>
