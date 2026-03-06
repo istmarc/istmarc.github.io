@@ -1,0 +1,28 @@
+var searchData=
+[
+  ['scalar_0',['scalar',['../classten_1_1scalar.html',1,'ten']]],
+  ['scalar_5fleft_5fbinary_5ffunc_1',['scalar_left_binary_func',['../structten_1_1functional_1_1scalar__left__binary__func.html',1,'ten::functional']]],
+  ['scalar_5fnode_2',['scalar_node',['../classten_1_1scalar__node.html',1,'ten']]],
+  ['scalar_5foperations_3',['scalar_operations',['../structten_1_1scalar__operations.html',1,'ten']]],
+  ['scalar_5foperations_3c_20scalar_3c_20t_20_3e_20_3e_4',['scalar_operations&lt; scalar&lt; T &gt; &gt;',['../structten_1_1scalar__operations.html',1,'ten']]],
+  ['scalar_5fright_5fbinary_5ffunc_5',['scalar_right_binary_func',['../structten_1_1functional_1_1scalar__right__binary__func.html',1,'ten::functional']]],
+  ['sdense_5fstorage_6',['sdense_storage',['../classten_1_1sdense__storage.html',1,'ten']]],
+  ['sdiagonal_5fstorage_7',['sdiagonal_storage',['../classten_1_1sdiagonal__storage.html',1,'ten']]],
+  ['seq_8',['seq',['../structten_1_1seq.html',1,'ten']]],
+  ['sgd_9',['sgd',['../structten_1_1optim_1_1sgd.html',1,'ten::optim']]],
+  ['shape_10',['shape',['../classten_1_1shape.html',1,'ten']]],
+  ['sigmoid_11',['sigmoid',['../structten_1_1functional_1_1sigmoid.html',1,'ten::functional::sigmoid&lt; X, Y &gt;'],['../structten_1_1nn_1_1sigmoid.html',1,'ten::nn::sigmoid']]],
+  ['sin_12',['sin',['../structten_1_1functional_1_1sin.html',1,'ten::functional']]],
+  ['sinh_13',['sinh',['../structten_1_1functional_1_1sinh.html',1,'ten::functional']]],
+  ['sparse_5fstorage_14',['sparse_storage',['../classten_1_1sparse__storage.html',1,'ten']]],
+  ['sqr_15',['sqr',['../structten_1_1functional_1_1sqr.html',1,'ten::functional']]],
+  ['sqrt_16',['sqrt',['../structten_1_1functional_1_1sqrt.html',1,'ten::functional']]],
+  ['static_5freshape_17',['static_reshape',['../structten_1_1functional_1_1static__reshape.html',1,'ten::functional']]],
+  ['static_5fstride_5farray_18',['static_stride_array',['../structten_1_1details_1_1static__stride__array.html',1,'ten::details']]],
+  ['static_5fstride_5farray_3c_20_5f_5fshape_2c_20std_3a_3aindex_5fsequence_3c_20_5f_5findex_2e_2e_2e_20_3e_20_3e_19',['static_stride_array&lt; __shape, std::index_sequence&lt; __index... &gt; &gt;',['../structten_1_1details_1_1static__stride__array_3_01____shape_00_01std_1_1index__sequence_3_01____index_8_8_8_01_4_01_4.html',1,'ten::details']]],
+  ['static_5ftranspose_20',['static_transpose',['../structten_1_1functional_1_1static__transpose.html',1,'ten::functional']]],
+  ['static_5ftranspose_5fresult_21',['static_transpose_result',['../structten_1_1details_1_1static__transpose__result.html',1,'ten::details']]],
+  ['stride_22',['stride',['../classten_1_1stride.html',1,'ten']]],
+  ['sum_23',['sum',['../structten_1_1functional_1_1sum.html',1,'ten::functional']]],
+  ['svd_5ffact_24',['svd_fact',['../classten_1_1linalg_1_1svd__fact.html',1,'ten::linalg']]]
+];
